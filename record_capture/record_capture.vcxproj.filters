@@ -24,9 +24,6 @@
     <ClInclude Include="Capture.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="SepakerCapture.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="SCCommon.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -54,9 +51,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Capture.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SepakerCapture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="SCCommon.cpp">

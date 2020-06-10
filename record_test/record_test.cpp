@@ -2,7 +2,7 @@
 //
 
 #include "../record_capture/Capture.h"
-#include "../record_capture/SCCommon.h"
+//#include "../record_capture/SCCommon.h"
 #ifdef _DEBUG
 #pragma comment(lib,"../bind/record_capture.lib")
 #else 

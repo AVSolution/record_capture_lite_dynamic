@@ -6,22 +6,6 @@
 // this is INTERNAL DO NOT USE!
 namespace RL {
 namespace Record_Capture {
-    struct ImageRect {
-        ImageRect() : ImageRect(0, 0, 0, 0) {}
-        ImageRect(int l, int t, int r, int b) : left(l), top(t), right(r), bottom(b) {}
-        int left;
-        int top;
-        int right;
-        int bottom;
-        bool Contains(const ImageRect &a) const { return left <= a.left && right >= a.right && top <= a.top && bottom >= a.bottom; }
-    };
-    struct Image {
-        ImageRect Bounds;
-        int BytesToNextRow = 0;
-        bool isContiguous = false;
-        // alpha is always unused and might contain garbage
-        const ImageBGRA *Data = nullptr;
-    };
 
     inline bool operator==(const ImageRect &a, const ImageRect &b)
     {

@@ -78,9 +78,32 @@ namespace RL {
 			char Name[128] = { 0 };
 			float Scaling = 1.0f;
 		};
-		struct Image;
+		struct ImageRect {
+			ImageRect() : ImageRect(0, 0, 0, 0) {}
+			ImageRect(int l, int t, int r, int b) : left(l), top(t), right(r), bottom(b) {}
+			int left;
+			int top;
+			int right;
+			int bottom;
+			bool Contains(const ImageRect &a) const { return left <= a.left && right >= a.right && top <= a.top && bottom >= a.bottom; }
+		};
 		struct ImageBGRA {
 			unsigned char B, G, R, A;
+		};
+		struct Image {
+			ImageRect Bounds;
+			int BytesToNextRow = 0;
+			bool isContiguous = false;
+			// alpha is always unused and might contain garbage
+			const ImageBGRA *Data = nullptr;
+		};
+		struct AudioFrame {
+			int 	samples;
+			int 	bytesPerSample;
+			int 	channels;
+			int 	samplesPerSec;
+			void * 	buffer;
+			int64_t 	renderTimeMs;
 		};
 
 		// index to self in the GetMonitors() function
@@ -169,6 +192,7 @@ namespace RL {
 		typedef std::function<void(const RL::Record_Capture::Image &img, const Window &window)> WindowCaptureCallback;
 		typedef std::function<void(const RL::Record_Capture::Image &img, const Monitor &monitor)> ScreenCaptureCallback;
 		typedef std::function<void(const RL::Record_Capture::Image *img, const MousePoint &mousepoint)> MouseCallback;
+		typedef std::function<void(const RL::Record_Capture::AudioFrame &audioFrame)> SpeakerCallback;
 		typedef std::function<std::vector<Monitor>()> MonitorCallback;
 		typedef std::function<std::vector<Window>()> WindowCallback;
 
@@ -217,6 +241,8 @@ namespace RL {
 		// the callback of windowstocapture represents the list of windows which should be captured. Users should return the list of windows they want to
 		// be captured
 		SC_LITE_EXTERN std::shared_ptr<ICaptureConfiguration<WindowCaptureCallback>> CreateCaptureConfiguration(const WindowCallback &windowstocapture);
+
+		//SC_LITE_EXTERN std::shared_ptr<>
 
 	}//namespace Record_Capture
 }//namespace RL

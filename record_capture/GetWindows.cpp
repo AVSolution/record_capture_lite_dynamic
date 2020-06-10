@@ -9,8 +9,8 @@ using namespace std;
 #define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
 #include <Windows.h>
 
-namespace SL {
-namespace Screen_Capture {
+namespace RL {
+namespace Record_Capture {
 
     struct srch {
         std::vector<Window> Found;
@@ -50,7 +50,7 @@ namespace Screen_Capture {
 
         srch *s = (srch *)lParam;
         w.Handle = reinterpret_cast<size_t>(hwnd);
-        auto windowrect = SL::Screen_Capture::GetWindowRect(hwnd);
+        auto windowrect = RL::Record_Capture::GetWindowRect(hwnd);
         w.Position.x = windowrect.ClientRect.left;
         w.Position.y = windowrect.ClientRect.top;
         w.Size.x = windowrect.ClientRect.right - windowrect.ClientRect.left;
@@ -67,5 +67,5 @@ namespace Screen_Capture {
         return s.Found;
     }
 
-} // namespace Screen_Capture
-} // namespace SL
+} // namespace Record_Capture
+} // namespace RL

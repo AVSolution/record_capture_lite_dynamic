@@ -1,8 +1,8 @@
 #include "GDIFrameProcessor.h"
 #include <Dwmapi.h>
 
-namespace SL {
-namespace Screen_Capture {
+namespace RL {
+namespace Record_Capture {
 
     DUPL_RETURN GDIFrameProcessor::Init(std::shared_ptr<Thread_Data> data, const Monitor &monitor)
     {
@@ -85,7 +85,7 @@ namespace Screen_Capture {
     DUPL_RETURN GDIFrameProcessor::ProcessFrame(Window &selectedwindow)
     {
         auto Ret = DUPL_RETURN_SUCCESS;
-        auto windowrect = SL::Screen_Capture::GetWindowRect(SelectedWindow);
+        auto windowrect = RL::Record_Capture::GetWindowRect(SelectedWindow);
         ImageRect ret;
         memset(&ret, 0, sizeof(ret));
         ret.bottom = windowrect.ClientRect.bottom;
@@ -129,5 +129,5 @@ namespace Screen_Capture {
 
         return Ret;
     }
-} // namespace Screen_Capture
-} // namespace SL
+} // namespace Record_Capture
+} // namespace RL

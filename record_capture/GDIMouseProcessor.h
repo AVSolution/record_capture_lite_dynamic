@@ -4,8 +4,8 @@
 #include <memory>
 #include "GDIHelpers.h"
 
-namespace SL {
-    namespace Screen_Capture {
+namespace RL {
+    namespace Record_Capture {
 
         class GDIMouseProcessor : public BaseFrameProcessor {
 

@@ -29,9 +29,9 @@
 
 using namespace std;
 
-void ExtractAndConvertToRGBA(const SL::Screen_Capture::Image &img, unsigned char *dst, size_t dst_size)
+void ExtractAndConvertToRGBA(const RL::Record_Capture::Image &img, unsigned char *dst, size_t dst_size)
 {
-	assert(dst_size >= static_cast<size_t>(SL::Screen_Capture::Width(img) * SL::Screen_Capture::Height(img) * sizeof(SL::Screen_Capture::ImageBGRA)));
+	assert(dst_size >= static_cast<size_t>(RL::Record_Capture::Width(img) * RL::Record_Capture::Height(img) * sizeof(RL::Record_Capture::ImageBGRA)));
 	auto imgsrc = StartSrc(img);
 	auto imgdist = dst;
 	for (auto h = 0; h < Height(img); h++) {
@@ -43,7 +43,7 @@ void ExtractAndConvertToRGBA(const SL::Screen_Capture::Image &img, unsigned char
 			*imgdist++ = 0; // alpha should be zero
 			imgsrc++;
 		}
-		imgsrc = SL::Screen_Capture::GotoNextRow(img, startimgsrc);
+		imgsrc = RL::Record_Capture::GotoNextRow(img, startimgsrc);
 	}
 }
 
@@ -87,9 +87,9 @@ int main()
 	*/
 	//record windows .
 	std::atomic<int> realcounter = 0;
-	std::shared_ptr<SL::Screen_Capture::IScreenCaptureManager>  framegrabber =
-		SL::Screen_Capture::CreateCaptureConfiguration( []() {
-		auto windows = SL::Screen_Capture::GetWindows();
+	std::shared_ptr<RL::Record_Capture::IScreenCaptureManager>  framegrabber =
+		RL::Record_Capture::CreateCaptureConfiguration( []() {
+		auto windows = RL::Record_Capture::GetWindows();
 		decltype(windows) filtereditems;
 		std::string strchterm = "Óã¶ú";
 		for (auto &window : windows) {
@@ -99,34 +99,34 @@ int main()
 			}
 		}
 		return filtereditems;
-	})->onNewFrame([&](const SL::Screen_Capture::Image &img, const SL::Screen_Capture::Window &window) {
-// 		static FILE* pRecordFile = nullptr;
-// 		if (nullptr == pRecordFile)
-// 			fopen_s(&pRecordFile,"dmp.bgra","wb");
-// 		int nBufferLen = 4 * Width(window) * Height(window);
-// 		fwrite((void*)img.Data,nBufferLen, 1, pRecordFile);
-		auto r = realcounter.fetch_add(1);
-		auto s = std::to_string(r) + std::string("WINNEW_") + std::string(".jpg");
-		auto size = Width(img) * Height(img) * sizeof(SL::Screen_Capture::ImageBGRA);
-
-		auto imgbuffer(std::make_unique<unsigned char[]>(size));
-		ExtractAndConvertToRGBA(img, imgbuffer.get(), size);
-		tje_encode_to_file(s.c_str(), Width(img), Height(img), 4, (const unsigned char*)imgbuffer.get());
+	})->onNewFrame([&](const RL::Record_Capture::Image &img, const RL::Record_Capture::Window &window) {
+		static FILE* pRecordFile = nullptr;
+		if (nullptr == pRecordFile)
+			fopen_s(&pRecordFile,"app.raw","wb");
+		int nBufferLen = 4 * Width(window) * Height(window);
+		fwrite((void*)img.Data,nBufferLen, 1, pRecordFile);
+// 		auto r = realcounter.fetch_add(1);
+// 		auto s = std::to_string(r) + std::string("WINNEW_") + std::string(".jpg");
+// 		auto size = Width(img) * Height(img) * sizeof(RL::Record_Capture::ImageBGRA);
+// 
+// 		auto imgbuffer(std::make_unique<unsigned char[]>(size));
+// 		ExtractAndConvertToRGBA(img, imgbuffer.get(), size);
+// 		tje_encode_to_file(s.c_str(), Width(img), Height(img), 4, (const unsigned char*)imgbuffer.get());
 
 		std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()<<" onNewFrame. width: " <<Width(window)<<" height: "<<Height(window)<< std::endl;
 
-	})->onFrameChanged([](const SL::Screen_Capture::Image &img, const SL::Screen_Capture::Window &window) {
+	})->onFrameChanged([](const RL::Record_Capture::Image &img, const RL::Record_Capture::Window &window) {
 		//cout<<"onFrameChanged."<<endl;
-	})->onMouseChanged([](const SL::Screen_Capture::Image *img, const SL::Screen_Capture::MousePoint &mousepoint) {
+	})->onMouseChanged([](const RL::Record_Capture::Image *img, const RL::Record_Capture::MousePoint &mousepoint) {
 		//cout<<"onMouseChanged."<<endl;
 	})->start_capturing();
 
-	std::cout<<"Sleep 1 second"<<std::endl;
+	std::cout<<"RLeep 1 second"<<std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(1));
 	framegrabber->setFrameChangeInterval(std::chrono::milliseconds(50));
 	framegrabber->setMouseChangeInterval(std::chrono::milliseconds(50));
 
-	std::this_thread::sleep_for(std::chrono::seconds(1));
+	std::this_thread::sleep_for(std::chrono::seconds(5));
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
@@ -138,4 +138,4 @@ int main()
 //   3. Use the Output window to see build output and other messages
 //   4. Use the Error List window to view errors
 //   5. Go to Project > Add New Item to create new code files, or Project > Add Existing Item to add existing code files to the project
-//   6. In the future, to open this project again, go to File > Open > Project and select the .sln file
+//   6. In the future, to open this project again, go to File > Open > Project and select the .RLn file

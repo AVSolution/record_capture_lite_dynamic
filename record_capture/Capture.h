@@ -43,8 +43,8 @@ extern "C" {
 	SC_LITE_EXTERN void releaseRecordInstance(void* pInstance);
 }
 
-namespace SL {
-	namespace Screen_Capture {
+namespace RL {
+	namespace Record_Capture {
 		struct SC_LITE_EXTERN Point {
 			int x;
 			int y;
@@ -166,9 +166,9 @@ namespace SL {
 		// will return all windows
 		SC_LITE_EXTERN std::vector<Window> GetWindows();
 
-		typedef std::function<void(const SL::Screen_Capture::Image &img, const Window &window)> WindowCaptureCallback;
-		typedef std::function<void(const SL::Screen_Capture::Image &img, const Monitor &monitor)> ScreenCaptureCallback;
-		typedef std::function<void(const SL::Screen_Capture::Image *img, const MousePoint &mousepoint)> MouseCallback;
+		typedef std::function<void(const RL::Record_Capture::Image &img, const Window &window)> WindowCaptureCallback;
+		typedef std::function<void(const RL::Record_Capture::Image &img, const Monitor &monitor)> ScreenCaptureCallback;
+		typedef std::function<void(const RL::Record_Capture::Image *img, const MousePoint &mousepoint)> MouseCallback;
 		typedef std::function<std::vector<Monitor>()> MonitorCallback;
 		typedef std::function<std::vector<Window>()> WindowCallback;
 
@@ -218,8 +218,8 @@ namespace SL {
 		// be captured
 		SC_LITE_EXTERN std::shared_ptr<ICaptureConfiguration<WindowCaptureCallback>> CreateCaptureConfiguration(const WindowCallback &windowstocapture);
 
-	}//namespace Screen_Capture
-}//namespace SL
+	}//namespace Record_Capture
+}//namespace RL
 
 #endif 
 

@@ -38,8 +38,8 @@ void releaseRecordInstance(void* pInstance) {
 	pInstance = nullptr;
 }
 
-namespace SL {
-	namespace Screen_Capture {
+namespace RL {
+	namespace Record_Capture {
 
 		bool isMonitorInsideBounds(const std::vector<Monitor> &monitors, const Monitor &monitor)
 		{
@@ -221,5 +221,5 @@ namespace SL {
 			impl->Thread_Data_->WindowCaptureData.getThingsToWatch = windowtocapture;
 			return std::make_shared<WindowCaptureConfiguration>(impl);
 		}
-	}// namespace Screen_Capture
-}//namespace SL
+	}// namespace Record_Capture
+}//namespace RL

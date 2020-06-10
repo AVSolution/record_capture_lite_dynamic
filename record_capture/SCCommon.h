@@ -4,8 +4,8 @@
 #include <thread>
 
 // this is INTERNAL DO NOT USE!
-namespace SL {
-namespace Screen_Capture {
+namespace RL {
+namespace Record_Capture {
     struct ImageRect {
         ImageRect() : ImageRect(0, 0, 0, 0) {}
         ImageRect(int l, int t, int r, int b) : left(l), top(t), right(r), bottom(b) {}
@@ -123,5 +123,5 @@ namespace Screen_Capture {
             }
         }
     }
-} // namespace Screen_Capture
-} // namespace SL
+} // namespace Record_Capture
+} // namespace RL

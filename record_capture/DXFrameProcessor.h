@@ -10,8 +10,8 @@
 #pragma comment(lib, "dxgi.lib")
 #pragma comment(lib, "d3d11.lib")
 
-namespace SL {
-    namespace Screen_Capture {
+namespace RL {
+    namespace Record_Capture {
         class DXFrameProcessor : public BaseFrameProcessor {
             Microsoft::WRL::ComPtr<ID3D11Device> Device;
             Microsoft::WRL::ComPtr<ID3D11DeviceContext> DeviceContext;
@@ -31,5 +31,5 @@ namespace SL {
             DUPL_RETURN ProcessFrame(const Monitor &currentmonitorinfo);
         };
 
-    } // namespace Screen_Capture
-} // namespace SL
+    } // namespace Record_Capture
+} // namespace RL

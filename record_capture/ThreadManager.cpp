@@ -2,15 +2,15 @@
 #include <assert.h>
 #include <algorithm>
 
-SL::Screen_Capture::ThreadManager::ThreadManager()
+RL::Record_Capture::ThreadManager::ThreadManager()
 {
 }
-SL::Screen_Capture::ThreadManager::~ThreadManager()
+RL::Record_Capture::ThreadManager::~ThreadManager()
 {
     Join();
 }
 
-void SL::Screen_Capture::ThreadManager::Init(const std::shared_ptr<Thread_Data>& data)
+void RL::Record_Capture::ThreadManager::Init(const std::shared_ptr<Thread_Data>& data)
 {
     assert(m_ThreadHandles.empty());
 
@@ -24,11 +24,11 @@ void SL::Screen_Capture::ThreadManager::Init(const std::shared_ptr<Thread_Data>&
         m_ThreadHandles.resize(monitors.size() + (data->ScreenCaptureData.OnMouseChanged ? 1 : 0)); // add another thread for mouse capturing if needed
 
         for (size_t i = 0; i < monitors.size(); ++i) {
-            m_ThreadHandles[i] = std::thread(&SL::Screen_Capture::RunCaptureMonitor, data, monitors[i]);
+            m_ThreadHandles[i] = std::thread(&RL::Record_Capture::RunCaptureMonitor, data, monitors[i]);
         }
         if (data->ScreenCaptureData.OnMouseChanged) {
             m_ThreadHandles.back() = std::thread([data] {
-                SL::Screen_Capture::RunCaptureMouse(data);
+                RL::Record_Capture::RunCaptureMouse(data);
             });
         }
 
@@ -37,17 +37,17 @@ void SL::Screen_Capture::ThreadManager::Init(const std::shared_ptr<Thread_Data>&
         auto windows = data->WindowCaptureData.getThingsToWatch();
         m_ThreadHandles.resize(windows.size() + (data->WindowCaptureData.OnMouseChanged ? 1 : 0)); // add another thread for mouse capturing if needed
         for (size_t i = 0; i < windows.size(); ++i) {
-            m_ThreadHandles[i] = std::thread(&SL::Screen_Capture::RunCaptureWindow, data, windows[i]);
+            m_ThreadHandles[i] = std::thread(&RL::Record_Capture::RunCaptureWindow, data, windows[i]);
         }
         if (data->WindowCaptureData.OnMouseChanged) {
             m_ThreadHandles.back() = std::thread([data] {
-                SL::Screen_Capture::RunCaptureMouse(data);
+                RL::Record_Capture::RunCaptureMouse(data);
             });
         }
     }
 }
 
-void SL::Screen_Capture::ThreadManager::Join()
+void RL::Record_Capture::ThreadManager::Join()
 {
     for (auto& t : m_ThreadHandles) {
         if (t.joinable()) {

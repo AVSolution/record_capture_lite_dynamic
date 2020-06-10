@@ -1,8 +1,8 @@
 #include "GDIMouseProcessor.h"
 #include "GDIHelpers.h"
 
-namespace SL {
-namespace Screen_Capture {
+namespace RL {
+namespace Record_Capture {
 
     DUPL_RETURN GDIMouseProcessor::Init(std::shared_ptr<Thread_Data> data)
     {
@@ -119,5 +119,5 @@ namespace Screen_Capture {
         return Ret;
     }
 
-} // namespace Screen_Capture
-} // namespace SL
+} // namespace Record_Capture
+} // namespace RL

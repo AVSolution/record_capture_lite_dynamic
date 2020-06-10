@@ -2,8 +2,8 @@
 #include "capture.h"
 #include <DXGI.h>
 
-namespace SL {
-namespace Screen_Capture {
+namespace RL {
+namespace Record_Capture {
 
     float scaleFromDpi(int xdpi)
     {
@@ -62,5 +62,5 @@ namespace Screen_Capture {
         }
         return ret;
     }
-} // namespace Screen_Capture
-} // namespace SL
+} // namespace Record_Capture
+} // namespace RL

@@ -5,18 +5,18 @@
 #include <string>
 
 #if (_MSC_VER >= 1700) && defined(_USING_V110_SDK71_)
-namespace SL {
-namespace Screen_Capture {
+namespace RL {
+namespace Record_Capture {
 
     DUPL_RETURN DXFrameProcessor::Init(std::shared_ptr<Thread_Data> data) { return DUPL_RETURN::DUPL_RETURN_ERROR_EXPECTED; }
     DUPL_RETURN DXFrameProcessor::ProcessFrame() { return DUPL_RETURN::DUPL_RETURN_ERROR_EXPECTED; }
 
-} // namespace Screen_Capture
-} // namespace SL
+} // namespace Record_Capture
+} // namespace RL
 #else
 
-namespace SL {
-namespace Screen_Capture {
+namespace RL {
+namespace Record_Capture {
     struct DX_RESOURCES {
         Microsoft::WRL::ComPtr<ID3D11Device> Device;
         Microsoft::WRL::ComPtr<ID3D11DeviceContext> DeviceContext;
@@ -366,7 +366,7 @@ namespace Screen_Capture {
         ProcessCapture(Data->ScreenCaptureData, *this, SelectedMonitor, startsrc, MappingDesc.RowPitch);
         return DUPL_RETURN_SUCCESS;
     }
-} // namespace Screen_Capture
-} // namespace SL
+} // namespace Record_Capture
+} // namespace RL
 
 #endif

@@ -11,8 +11,8 @@
 using namespace std::chrono_literals;
 
 // this is internal stuff..
-namespace SL {
-namespace Screen_Capture {
+namespace RL {
+namespace Record_Capture {
     class ThreadManager {
 
         std::vector<std::thread> m_ThreadHandles;
@@ -177,5 +177,5 @@ namespace Screen_Capture {
     void RunCaptureWindow(std::shared_ptr<Thread_Data> data, Window window);
 
     void RunCaptureMouse(std::shared_ptr<Thread_Data> data);
-} // namespace Screen_Capture
-} // namespace SL
+} // namespace Record_Capture
+} // namespace RL

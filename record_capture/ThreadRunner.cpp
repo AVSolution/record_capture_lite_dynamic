@@ -11,8 +11,8 @@
 #include <memory>
 #include <string>
 
-namespace SL {
-namespace Screen_Capture {
+namespace RL {
+namespace Record_Capture {
 
     template <class T> void ProcessExit(DUPL_RETURN Ret, T *TData)
     {
@@ -80,5 +80,5 @@ namespace Screen_Capture {
             return;
         TryCaptureWindow<GDIFrameProcessor>(data, wnd);
     }
-} // namespace Screen_Capture
-} // namespace SL
+} // namespace Record_Capture
+} // namespace RL

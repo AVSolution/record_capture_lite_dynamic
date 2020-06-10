@@ -3,8 +3,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <Dwmapi.h>
-namespace SL {
-    namespace Screen_Capture {
+namespace RL {
+    namespace Record_Capture {
         class HDCWrapper {
         public:
             HDCWrapper() : DC(nullptr) {}

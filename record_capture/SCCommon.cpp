@@ -6,8 +6,8 @@
 #include <iostream>
 #include <cstring>
 
-namespace SL {
-    namespace Screen_Capture {
+namespace RL {
+    namespace Record_Capture {
 
         void SanitizeRects(std::vector<ImageRect> &rects, const Image &img)
         {
@@ -249,5 +249,5 @@ namespace SL {
         // number of bytes per row, NOT including the Rowpadding
         int RowStride(const Image &img) { return sizeof(ImageBGRA) * Width(img); }
         const ImageBGRA *StartSrc(const Image &img) { return img.Data; }
-    } // namespace Screen_Capture
-} // namespace SL
+    } // namespace Record_Capture
+} // namespace RL

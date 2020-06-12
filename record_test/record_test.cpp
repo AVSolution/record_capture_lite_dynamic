@@ -86,6 +86,8 @@ int main()
     std::cout << "Hello World!\n";
 	*/
 	//record windows .
+	
+	std::cout<<">>>>>>>>>>record_test begin..."<<endl;
 	std::atomic<int> realcounter = 0;
 	std::shared_ptr<RL::Record_Capture::IScreenCaptureManager>  framegrabber =
 		RL::Record_Capture::CreateCaptureConfiguration( []() {
@@ -113,20 +115,42 @@ int main()
 // 		ExtractAndConvertToRGBA(img, imgbuffer.get(), size);
 // 		tje_encode_to_file(s.c_str(), Width(img), Height(img), 4, (const unsigned char*)imgbuffer.get());
 
-		std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()<<" onNewFrame. width: " <<Width(window)<<" height: "<<Height(window)<< std::endl;
+		//std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()<<" onNewFrame. width: " <<Width(window)<<" height: "<<Height(window)<< std::endl;
 
-	})->onFrameChanged([](const RL::Record_Capture::Image &img, const RL::Record_Capture::Window &window) {
-		//cout<<"onFrameChanged."<<endl;
-	})->onMouseChanged([](const RL::Record_Capture::Image *img, const RL::Record_Capture::MousePoint &mousepoint) {
-		//cout<<"onMouseChanged."<<endl;
-	})->start_capturing();
+	})
+		->start_capturing();
+		
+	std::shared_ptr<RL::Record_Capture::IScreenCaptureManager> speakergrabber =
+		RL::Record_Capture::CreateCaptureConfiguration([]() {
+		auto speakers = RL::Record_Capture::GetSpeakers();
+		return speakers;
+	})->onAudioFrame([](const RL::Record_Capture::AudioFrame &audioFrame) {
+		//cout<<audioFrame.renderTimeMs<<" onAudioFrame."<<std::endl;
+		static FILE* pOutPutFile = nullptr;
+		if (nullptr == pOutPutFile)
+			pOutPutFile = fopen("speaker.pcm", "wb");
+		if (audioFrame.buffer) {
+			int len = audioFrame.samples * audioFrame.channels * audioFrame.bytesPerSample;
+			fwrite(audioFrame.buffer, len, 1, pOutPutFile);
+		}
+	})
+		->start_capturing();
 
-	std::cout<<"RLeep 1 second"<<std::endl;
+	int i = 0;
+	while (++i < 10) {
+		cout << "sleep 2 second." << endl;
+		std::this_thread::sleep_for(std::chrono::seconds(2));
+	}
+
+	cout<<"<<<<<<<<<<record_test terminal."<<endl;
+	/*
+	std::cout<<"Sleep 1 second"<<std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(1));
 	framegrabber->setFrameChangeInterval(std::chrono::milliseconds(50));
 	framegrabber->setMouseChangeInterval(std::chrono::milliseconds(50));
 
 	std::this_thread::sleep_for(std::chrono::seconds(5));
+	*/
 }
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu

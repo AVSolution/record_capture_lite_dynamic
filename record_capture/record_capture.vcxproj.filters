@@ -42,6 +42,9 @@
     <ClInclude Include="GDIMouseProcessor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="win-wsaapi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp">
@@ -75,6 +78,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GDIMouseProcessor.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="enum-wsaapi.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="win-wsaapi.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

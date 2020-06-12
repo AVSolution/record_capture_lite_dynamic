@@ -3,6 +3,7 @@
 #include "GDIMouseProcessor.h"
 #include "Capture.h"
 #include "ThreadManager.h"
+#include "win-wsaapi.h"
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -80,5 +81,17 @@ namespace Record_Capture {
             return;
         TryCaptureWindow<GDIFrameProcessor>(data, wnd);
     }
+
+	void RunCaptureSpeaker(std::shared_ptr<Thread_Data>data, Speaker speaker)
+	{
+		TryCaptureSpeaker<WSAAPISource>(data, speaker);
+	}
+
+	void RunCaptureMicrophone(std::shared_ptr<Thread_Data>data, Microphone microphone)
+	{
+		std::cout << "RunCaptureMicrophone thread." << std::endl;
+		AudioFrame audioframe;
+		data->MicrophoneCaptureData.onAudioFrame(std::ref(audioframe));
+	}
 } // namespace Record_Capture
 } // namespace RL

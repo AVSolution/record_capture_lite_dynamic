@@ -15,7 +15,7 @@ namespace RL {
             HWND SelectedWindow;
             std::unique_ptr<unsigned char[]> NewImageBuffer;
 
-            std::shared_ptr<Thread_Data> Data;
+           // std::shared_ptr<Thread_Data> Data;
         public:
             void Pause() {}
             void Resume() {}

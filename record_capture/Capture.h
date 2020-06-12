@@ -97,13 +97,24 @@ namespace RL {
 			// alpha is always unused and might contain garbage
 			const ImageBGRA *Data = nullptr;
 		};
+
+		struct AudioDeviceInfo {
+			char name[128] = { 0 };
+			char id[128] = { 0 };
+		};
+		struct Microphone {
+			AudioDeviceInfo audioDeviceInfo;
+		};
+		struct Speaker {
+			AudioDeviceInfo audioDeviceInfo;
+		};
 		struct AudioFrame {
-			int 	samples;
-			int 	bytesPerSample;
-			int 	channels;
-			int 	samplesPerSec;
-			void * 	buffer;
-			int64_t 	renderTimeMs;
+			int 	samples = 0;
+			int 	bytesPerSample = 0;
+			int 	channels = 0;
+			int 	samplesPerSec = 0;
+			void * 	buffer = nullptr;
+			int64_t 	renderTimeMs = 0;
 		};
 
 		// index to self in the GetMonitors() function
@@ -188,13 +199,20 @@ namespace RL {
 		SC_LITE_EXTERN std::vector<Monitor> GetMonitors();
 		// will return all windows
 		SC_LITE_EXTERN std::vector<Window> GetWindows();
+		// will return all speakers
+		SC_LITE_EXTERN std::vector<Speaker> GetSpeakers();
+		//will return all microphones
+		SC_LITE_EXTERN std::vector<Microphone> GetMicrophones();
 
 		typedef std::function<void(const RL::Record_Capture::Image &img, const Window &window)> WindowCaptureCallback;
 		typedef std::function<void(const RL::Record_Capture::Image &img, const Monitor &monitor)> ScreenCaptureCallback;
 		typedef std::function<void(const RL::Record_Capture::Image *img, const MousePoint &mousepoint)> MouseCallback;
-		typedef std::function<void(const RL::Record_Capture::AudioFrame &audioFrame)> SpeakerCallback;
+		typedef std::function<void(const RL::Record_Capture::AudioFrame &audioFrame)> SpeakerCaptureCallback;
+		typedef std::function<void(const RL::Record_Capture::AudioFrame &audioFrame)> MicrophoneCaptureCallback;
 		typedef std::function<std::vector<Monitor>()> MonitorCallback;
 		typedef std::function<std::vector<Window>()> WindowCallback;
+		typedef std::function<std::vector<Microphone>()> MicrophoneCallback;
+		typedef std::function<std::vector<Speaker>()> SpeakerCallback;
 
 		class SC_LITE_EXTERN IScreenCaptureManager {
 		public:
@@ -235,15 +253,26 @@ namespace RL {
 			virtual std::shared_ptr<IScreenCaptureManager> start_capturing() = 0;
 		};
 
+		template <typename AUDIOCAPTURECALLBACK> class IAudioCaptureConfiguration {
+		public:
+			virtual ~IAudioCaptureConfiguration(){}
+			//when a new audio frame is available the callback is invoked.
+			virtual std::shared_ptr<IAudioCaptureConfiguration<AUDIOCAPTURECALLBACK>> onAudioFrame(const AUDIOCAPTURECALLBACK &cb) = 0;
+			//start capturing.
+			virtual std::shared_ptr<IScreenCaptureManager> start_capturing() = 0;
+		};
 		// the callback of windowstocapture represents the list of monitors which should be captured. Users should return the list of monitors they want
 		// to be captured
 		SC_LITE_EXTERN std::shared_ptr<ICaptureConfiguration<ScreenCaptureCallback>> CreateCaptureConfiguration(const MonitorCallback &monitorstocapture);
 		// the callback of windowstocapture represents the list of windows which should be captured. Users should return the list of windows they want to
-		// be captured
+		// to be captured
 		SC_LITE_EXTERN std::shared_ptr<ICaptureConfiguration<WindowCaptureCallback>> CreateCaptureConfiguration(const WindowCallback &windowstocapture);
-
-		//SC_LITE_EXTERN std::shared_ptr<>
-
+		// the callback of speakerstocapture represents the list of speakers which should be captured. Users should return the list of speakers they want to
+		// to be captured.here choose default speaker.the list can be empty.
+		SC_LITE_EXTERN std::shared_ptr<IAudioCaptureConfiguration<SpeakerCaptureCallback>> CreateCaptureConfiguration(const SpeakerCallback &speakertocapture);
+		// the callback of microphonetocapture represents the list of microphone which should be captured. Users should return the list of microphone they want to
+		// to be captured
+		SC_LITE_EXTERN std::shared_ptr<IAudioCaptureConfiguration<MicrophoneCaptureCallback>> CreateCaptureConfiguration(const MicrophoneCallback &microhponertocapture);
 	}//namespace Record_Capture
 }//namespace RL
 

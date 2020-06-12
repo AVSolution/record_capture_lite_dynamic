@@ -45,6 +45,18 @@ void RL::Record_Capture::ThreadManager::Init(const std::shared_ptr<Thread_Data>&
             });
         }
     }
+	else if (data->SpeakerCaptureData.getThingsToWatch || data->SpeakerCaptureData.onAudioFrame) {
+		auto speakers = data->SpeakerCaptureData.getThingsToWatch();
+		m_ThreadHandles.resize(speakers.size());
+		for (size_t i = 0; i < speakers.size(); ++i)
+			m_ThreadHandles[i] = std::thread(&RL::Record_Capture::RunCaptureSpeaker, data, speakers[i]);
+	}
+	else if (data->MicrophoneCaptureData.getThingsToWatch && data->MicrophoneCaptureData.onAudioFrame) {
+		auto microphones = data->MicrophoneCaptureData.getThingsToWatch();//the microphone list only your selected microphone.
+		m_ThreadHandles.resize(microphones.size());
+		for (size_t i = 0; i < microphones.size(); ++i)
+			m_ThreadHandles[i] = std::thread(&RL::Record_Capture::RunCaptureMicrophone, data, microphones[i]);
+	}
 }
 
 void RL::Record_Capture::ThreadManager::Join()

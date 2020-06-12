@@ -1,4 +1,9 @@
 #pragma once
+
+#ifdef _WIN32
+#include <Unknwn.h>
+#endif
+
 #include "Capture.h"
 #include <atomic>
 #include <thread>
@@ -23,6 +28,11 @@ namespace Record_Capture {
         M OnMouseChanged;
         W getThingsToWatch;
     };
+	template <typename F,typename W> struct AudioCaptureData {
+		std::shared_ptr<Timer> FrameTimer;
+		F onAudioFrame;
+		W getThingsToWatch;
+	};
     struct CommonData {
         // Used to indicate abnormal error condition
         std::atomic<bool> UnexpectedErrorEvent;
@@ -33,10 +43,16 @@ namespace Record_Capture {
         std::atomic<bool> TerminateThreadsEvent;
         std::atomic<bool> Paused;
     };
-    struct Thread_Data {
 
-        CaptureData<ScreenCaptureCallback, MouseCallback, MonitorCallback> ScreenCaptureData;
-        CaptureData<WindowCaptureCallback, MouseCallback, WindowCallback> WindowCaptureData;
+    struct Thread_Data {
+		using CaptureMonitorType = CaptureData<ScreenCaptureCallback, MouseCallback, MonitorCallback>;
+		using CaptureWindowType = CaptureData<WindowCaptureCallback, MouseCallback, WindowCallback>;
+		using AudioSpeakerType = AudioCaptureData<SpeakerCaptureCallback, SpeakerCallback>;
+		using AudioMicrophoneType = AudioCaptureData<MicrophoneCaptureCallback, MicrophoneCallback>;
+        CaptureMonitorType ScreenCaptureData;
+        CaptureWindowType WindowCaptureData;
+		AudioSpeakerType SpeakerCaptureData;
+		AudioMicrophoneType MicrophoneCaptureData;
         CommonData CommonData_;
     };
 
@@ -107,5 +123,163 @@ namespace Record_Capture {
             }
         }
     }
+
+
+	/* Oh no I have my own com pointer class, the world is ending, how dare you
+	 * write your own! */
+
+	template<class T> class ComPtr {
+
+	protected:
+		T *ptr;
+
+		inline void Kill()
+		{
+			if (ptr)
+				ptr->Release();
+		}
+
+		inline void Replace(T *p)
+		{
+			if (ptr != p) {
+				if (p)
+					p->AddRef();
+				if (ptr)
+					ptr->Release();
+				ptr = p;
+			}
+		}
+
+	public:
+		inline ComPtr() : ptr(nullptr) {}
+		inline ComPtr(T *p) : ptr(p)
+		{
+			if (ptr)
+				ptr->AddRef();
+		}
+		inline ComPtr(const ComPtr<T> &c) : ptr(c.ptr)
+		{
+			if (ptr)
+				ptr->AddRef();
+		}
+		inline ComPtr(ComPtr<T> &&c) : ptr(c.ptr) { c.ptr = nullptr; }
+		inline ~ComPtr() { Kill(); }
+
+		inline void Clear()
+		{
+			if (ptr) {
+				ptr->Release();
+				ptr = nullptr;
+			}
+		}
+
+		inline ComPtr<T> &operator=(T *p)
+		{
+			Replace(p);
+			return *this;
+		}
+
+		inline ComPtr<T> &operator=(const ComPtr<T> &c)
+		{
+			Replace(c.ptr);
+			return *this;
+		}
+
+		inline ComPtr<T> &operator=(ComPtr<T> &&c)
+		{
+			if (&ptr != &c.ptr) {
+				Kill();
+				ptr = c.ptr;
+				c.ptr = nullptr;
+			}
+
+			return *this;
+		}
+
+		inline T *Detach()
+		{
+			T *out = ptr;
+			ptr = nullptr;
+			return out;
+		}
+
+		inline void CopyTo(T **out)
+		{
+			if (out) {
+				if (ptr)
+					ptr->AddRef();
+				*out = ptr;
+			}
+		}
+
+		inline ULONG Release()
+		{
+			ULONG ref;
+
+			if (!ptr)
+				return 0;
+			ref = ptr->Release();
+			ptr = nullptr;
+			return ref;
+		}
+
+		inline T **Assign()
+		{
+			Clear();
+			return &ptr;
+		}
+		inline void Set(T *p)
+		{
+			Kill();
+			ptr = p;
+		}
+
+		inline T *Get() const { return ptr; }
+
+		inline T **operator&() { return Assign(); }
+
+		inline operator T *() const { return ptr; }
+		inline T *operator->() const { return ptr; }
+
+		inline bool operator==(T *p) const { return ptr == p; }
+		inline bool operator!=(T *p) const { return ptr != p; }
+
+		inline bool operator!() const { return !ptr; }
+	};
+	
+	template<typename T> class CoTaskMemPtr {
+		T *ptr;
+
+		inline void Clear()
+		{
+			if (ptr)
+				CoTaskMemFree(ptr);
+		}
+
+	public:
+		inline CoTaskMemPtr() : ptr(NULL) {}
+		inline CoTaskMemPtr(T *ptr_) : ptr(ptr_) {}
+		inline ~CoTaskMemPtr() { Clear(); }
+
+		inline operator T *() const { return ptr; }
+		inline T *operator->() const { return ptr; }
+
+		inline const T *Get() const { return ptr; }
+
+		inline CoTaskMemPtr &operator=(T *val)
+		{
+			Clear();
+			ptr = val;
+			return *this;
+		}
+
+		inline T **operator&()
+		{
+			Clear();
+			ptr = NULL;
+			return &ptr;
+		}
+	};
+
 } // namespace Record_Capture
 } // namespace RL

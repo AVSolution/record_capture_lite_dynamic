@@ -78,7 +78,7 @@ namespace RL {
 			ScreenCaptureManager()
 			{
 				//you must ONLY HAVE ONE INSTANCE RUNNING AT A TIME. Destroy the first instance then create one!
-				assert(!ScreenCaptureManagerExists);
+				//assert(!ScreenCaptureManagerExists);
 				ScreenCaptureManagerExists = true;
 				Thread_Data_ = std::make_shared<Thread_Data>();
 				Thread_Data_->CommonData_.Paused = false;
@@ -141,7 +141,6 @@ namespace RL {
 			virtual bool isPaused() const override { return Thread_Data_->CommonData_.Paused; }
 			virtual void resume() override { Thread_Data_->CommonData_.Paused = false; }
 		};
-
 
 		class ScreenCaptureConfiguration : public ICaptureConfiguration<ScreenCaptureCallback> {
 			std::shared_ptr<ScreenCaptureManager> Impl_;
@@ -208,6 +207,47 @@ namespace RL {
 				return Impl_;
 			}
 		};
+
+		class SpeakerCaptureConfiguration: public IAudioCaptureConfiguration<SpeakerCaptureCallback> {
+				std::shared_ptr<ScreenCaptureManager> Impl_;
+
+		public:
+			SpeakerCaptureConfiguration(const std::shared_ptr<ScreenCaptureManager> &impl) : Impl_(impl) {}
+
+			virtual std::shared_ptr<IAudioCaptureConfiguration<SpeakerCaptureCallback>> onAudioFrame(const SpeakerCaptureCallback &cb) override
+			{
+				assert(!Impl_->Thread_Data_->SpeakerCaptureData.onAudioFrame);
+				Impl_->Thread_Data_->SpeakerCaptureData.onAudioFrame = cb;
+				return std::make_shared<SpeakerCaptureConfiguration>(Impl_);
+			}
+			virtual std::shared_ptr<IScreenCaptureManager> start_capturing() override
+			{
+				assert(Impl_->Thread_Data_->SpeakerCaptureData.onAudioFrame);
+				Impl_->start();
+				return Impl_;
+			}
+		};
+
+		class MicrophoneCaptureConfiguration : public IAudioCaptureConfiguration<MicrophoneCaptureCallback> {
+				std::shared_ptr<ScreenCaptureManager> Impl_;
+
+		public:
+			MicrophoneCaptureConfiguration(const std::shared_ptr<ScreenCaptureManager> &impl):Impl_(impl){}
+
+			virtual std::shared_ptr<IAudioCaptureConfiguration<SpeakerCaptureCallback>> onAudioFrame(const MicrophoneCaptureCallback &cb) override
+			{
+				assert(!Impl_->Thread_Data_->MicrophoneCaptureData.onAudioFrame);
+				Impl_->Thread_Data_->MicrophoneCaptureData.onAudioFrame = cb;
+				return std::make_shared<MicrophoneCaptureConfiguration>(Impl_);
+			}
+			virtual std::shared_ptr<IScreenCaptureManager> start_capturing() override
+			{
+				assert(Impl_->Thread_Data_->MicrophoneCaptureData.onAudioFrame);
+				Impl_->start();
+				return Impl_;
+			}
+		};
+
 		std::shared_ptr<ICaptureConfiguration<ScreenCaptureCallback>> CreateCaptureConfiguration(const MonitorCallback &monitorstocapture)
 		{
 			auto impl = std::make_shared<ScreenCaptureManager>();
@@ -220,6 +260,20 @@ namespace RL {
 			auto impl = std::make_shared<ScreenCaptureManager>();
 			impl->Thread_Data_->WindowCaptureData.getThingsToWatch = windowtocapture;
 			return std::make_shared<WindowCaptureConfiguration>(impl);
+		}
+
+		std::shared_ptr<IAudioCaptureConfiguration<SpeakerCaptureCallback>> CreateCaptureConfiguration(const SpeakerCallback &speakertocapture)
+		{
+			auto impl = std::make_shared<ScreenCaptureManager>();
+			impl->Thread_Data_->SpeakerCaptureData.getThingsToWatch = speakertocapture;
+			return std::make_shared<SpeakerCaptureConfiguration>(impl);
+		}
+
+		std::shared_ptr<IAudioCaptureConfiguration<MicrophoneCaptureCallback>> CreateCaptureConfiguration(const MicrophoneCallback &microhponertocapture)
+		{
+			auto impl = std::make_shared<ScreenCaptureManager>();
+			impl->Thread_Data_->MicrophoneCaptureData.getThingsToWatch = microhponertocapture;
+			return std::make_shared<MicrophoneCaptureConfiguration>(impl);
 		}
 	}// namespace Record_Capture
 }//namespace RL

@@ -1,12 +1,12 @@
 // record_test.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
-#include "../record_capture/Capture.h"
-//#include "../record_capture/SCCommon.h"
+#include "../recordcapture/Capture.h"
+//#include "../recordcapture/SCCommon.h"
 #ifdef _DEBUG
-#pragma comment(lib,"../bind/record_capture.lib")
+#pragma comment(lib,"../bind/recordcapture.lib")
 #else 
-#pragma  comment(lib,"../bin/record_capture.lib")
+#pragma  comment(lib,"../bin/recordcapture.lib")
 #endif
 
 #include <algorithm>
@@ -29,9 +29,9 @@
 
 using namespace std;
 
-void ExtractAndConvertToRGBA(const RL::Record_Capture::Image &img, unsigned char *dst, size_t dst_size)
+void ExtractAndConvertToRGBA(const RL::recordcapture::Image &img, unsigned char *dst, size_t dst_size)
 {
-	assert(dst_size >= static_cast<size_t>(RL::Record_Capture::Width(img) * RL::Record_Capture::Height(img) * sizeof(RL::Record_Capture::ImageBGRA)));
+	assert(dst_size >= static_cast<size_t>(RL::recordcapture::Width(img) * RL::recordcapture::Height(img) * sizeof(RL::recordcapture::ImageBGRA)));
 	auto imgsrc = StartSrc(img);
 	auto imgdist = dst;
 	for (auto h = 0; h < Height(img); h++) {
@@ -43,7 +43,7 @@ void ExtractAndConvertToRGBA(const RL::Record_Capture::Image &img, unsigned char
 			*imgdist++ = 0; // alpha should be zero
 			imgsrc++;
 		}
-		imgsrc = RL::Record_Capture::GotoNextRow(img, startimgsrc);
+		imgsrc = RL::recordcapture::GotoNextRow(img, startimgsrc);
 	}
 }
 
@@ -89,9 +89,9 @@ int main()
 	
 	std::cout<<">>>>>>>>>>record_test begin..."<<endl;
 	std::atomic<int> realcounter = 0;
-	std::shared_ptr<RL::Record_Capture::IScreenCaptureManager>  framegrabber =
-		RL::Record_Capture::CreateCaptureConfiguration( []() {
-		auto windows = RL::Record_Capture::GetWindows();
+	std::shared_ptr<RL::recordcapture::IScreenCaptureManager>  framegrabber =
+		RL::recordcapture::CreateCaptureConfiguration( []() {
+		auto windows = RL::recordcapture::GetWindows();
 		decltype(windows) filtereditems;
 		std::string strchterm = "Óã¶ú";
 		for (auto &window : windows) {
@@ -101,7 +101,7 @@ int main()
 			}
 		}
 		return filtereditems;
-	})->onNewFrame([&](const RL::Record_Capture::Image &img, const RL::Record_Capture::Window &window) {
+	})->onNewFrame([&](const RL::recordcapture::Image &img, const RL::recordcapture::Window &window) {
 		static FILE* pRecordFile = nullptr;
 		if (nullptr == pRecordFile)
 			fopen_s(&pRecordFile,"app.raw","wb");
@@ -109,7 +109,7 @@ int main()
 		fwrite((void*)img.Data,nBufferLen, 1, pRecordFile);
 // 		auto r = realcounter.fetch_add(1);
 // 		auto s = std::to_string(r) + std::string("WINNEW_") + std::string(".jpg");
-// 		auto size = Width(img) * Height(img) * sizeof(RL::Record_Capture::ImageBGRA);
+// 		auto size = Width(img) * Height(img) * sizeof(RL::recordcapture::ImageBGRA);
 // 
 // 		auto imgbuffer(std::make_unique<unsigned char[]>(size));
 // 		ExtractAndConvertToRGBA(img, imgbuffer.get(), size);
@@ -120,11 +120,11 @@ int main()
 	})
 		->start_capturing();
 		
-	std::shared_ptr<RL::Record_Capture::IScreenCaptureManager> speakergrabber =
-		RL::Record_Capture::CreateCaptureConfiguration([]() {
-		auto speakers = RL::Record_Capture::GetSpeakers();
+	std::shared_ptr<RL::recordcapture::IScreenCaptureManager> speakergrabber =
+		RL::recordcapture::CreateCaptureConfiguration([]() {
+		auto speakers = RL::recordcapture::GetSpeakers();
 		return speakers;
-	})->onAudioFrame([](const RL::Record_Capture::AudioFrame &audioFrame) {
+	})->onAudioFrame([](const RL::recordcapture::AudioFrame &audioFrame) {
 		//cout<<audioFrame.renderTimeMs<<" onAudioFrame."<<std::endl;
 		static FILE* pOutPutFile = nullptr;
 		if (nullptr == pOutPutFile)

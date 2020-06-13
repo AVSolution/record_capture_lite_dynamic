@@ -3,6 +3,7 @@
 #include "SCCommon.h"
 #include <Psapi.h>
 #include <algorithm>
+#include <ShlObj.h>
 #include <iostream>
 using namespace std;
 
@@ -10,7 +11,7 @@ using namespace std;
 #include <Windows.h>
 
 namespace RL {
-namespace recordcapture {
+namespace RecordCapture {
 
     struct srch {
         std::vector<Window> Found;
@@ -47,10 +48,11 @@ namespace recordcapture {
             return true;
         }
         std::cout << "enum window name: " << w.Name <<" handle: "<<hwnd<< std::endl;
+		LogInstance()->rlog(IRecordLog::LOG_INFO, "enum window name: %s,hwnd: %p", w.Name, hwnd);
 
         srch *s = (srch *)lParam;
         w.Handle = reinterpret_cast<size_t>(hwnd);
-        auto windowrect = RL::recordcapture::GetWindowRect(hwnd);
+        auto windowrect = RL::RecordCapture::GetWindowRect(hwnd);
         w.Position.x = windowrect.ClientRect.left;
         w.Position.y = windowrect.ClientRect.top;
         w.Size.x = windowrect.ClientRect.right - windowrect.ClientRect.left;
@@ -67,5 +69,21 @@ namespace recordcapture {
         return s.Found;
     }
 
-} // namespace recordcapture
+	std::string GetLocalAppDataPath()
+	{
+		char m_lpszDefaultDir[MAX_PATH];
+		char szDocument[MAX_PATH] = { 0 };
+		memset(m_lpszDefaultDir, 0, _MAX_PATH);
+
+		LPITEMIDLIST pidl = NULL;
+		SHGetSpecialFolderLocation(NULL, CSIDL_LOCAL_APPDATA, &pidl);
+		if (pidl && SHGetPathFromIDList(pidl, szDocument))
+		{
+			GetShortPathName(szDocument, m_lpszDefaultDir, _MAX_PATH);
+		}
+
+		return m_lpszDefaultDir;
+	}
+
+} // namespace RecordCapture
 } // namespace RL

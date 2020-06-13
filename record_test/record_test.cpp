@@ -1,12 +1,12 @@
 // record_test.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
-#include "../recordcapture/Capture.h"
-//#include "../recordcapture/SCCommon.h"
+#include "../RecordCapture/Capture.h"
+//#include "../RecordCapture/SCCommon.h"
 #ifdef _DEBUG
-#pragma comment(lib,"../bind/recordcapture.lib")
+#pragma comment(lib,"../bind/RecordCapture.lib")
 #else 
-#pragma  comment(lib,"../bin/recordcapture.lib")
+#pragma  comment(lib,"../bin/RecordCapture.lib")
 #endif
 
 #include <algorithm>
@@ -29,9 +29,9 @@
 
 using namespace std;
 
-void ExtractAndConvertToRGBA(const RL::recordcapture::Image &img, unsigned char *dst, size_t dst_size)
+void ExtractAndConvertToRGBA(const RL::RecordCapture::Image &img, unsigned char *dst, size_t dst_size)
 {
-	assert(dst_size >= static_cast<size_t>(RL::recordcapture::Width(img) * RL::recordcapture::Height(img) * sizeof(RL::recordcapture::ImageBGRA)));
+	assert(dst_size >= static_cast<size_t>(RL::RecordCapture::Width(img) * RL::RecordCapture::Height(img) * sizeof(RL::RecordCapture::ImageBGRA)));
 	auto imgsrc = StartSrc(img);
 	auto imgdist = dst;
 	for (auto h = 0; h < Height(img); h++) {
@@ -43,7 +43,7 @@ void ExtractAndConvertToRGBA(const RL::recordcapture::Image &img, unsigned char 
 			*imgdist++ = 0; // alpha should be zero
 			imgsrc++;
 		}
-		imgsrc = RL::recordcapture::GotoNextRow(img, startimgsrc);
+		imgsrc = RL::RecordCapture::GotoNextRow(img, startimgsrc);
 	}
 }
 
@@ -78,54 +78,72 @@ int main()
 	*/
 	
 	/*
-	std::unique_ptr<IRecordCapture> recordcapture(static_cast<IRecordCapture*>(getRecordInstance()));
-	recordcapture->initialization();
-	recordcapture->startRecord();
-	recordcapture->stopRecord();
+	std::unique_ptr<IRecorCapture> RecordCapture(static_cast<IRecordCapture*>(getRecordInstance()));
+	RecordCapture->initialization();
+	RecordCapture->startRecord();
+	RecordCapture->stopRecord();
 
     std::cout << "Hello World!\n";
 	*/
 	//record windows .
+
 	
-	std::cout<<">>>>>>>>>>record_test begin..."<<endl;
+	std::shared_ptr<RL::RecordCapture::IRecordLog> logInstance = RL::RecordCapture::CreateRecordLog([]() {
+		
+		std::string appname = "/yuer/log/record/record.log";
+		return RL::RecordCapture::GetLocalAppDataPath() + appname;
+	});
+
+	using RLOG = RL::RecordCapture::IRecordLog;
+	logInstance->rlog(RLOG::LOG_INFO, "%s","=====record running........");
+	
 	std::atomic<int> realcounter = 0;
-	std::shared_ptr<RL::recordcapture::IScreenCaptureManager>  framegrabber =
-		RL::recordcapture::CreateCaptureConfiguration( []() {
-		auto windows = RL::recordcapture::GetWindows();
+	auto onNewFramestart = std::chrono::high_resolution_clock::now();
+
+	std::atomic<int> realcounterAudio = 0;
+	auto onAudioFrameStart = std::chrono::high_resolution_clock::now();
+	std::shared_ptr<RL::RecordCapture::IScreenCaptureManager>  framegrabber =
+		RL::RecordCapture::CreateCaptureConfiguration( [&]() {
+		auto windows = RL::RecordCapture::GetWindows();
 		decltype(windows) filtereditems;
 		std::string strchterm = "Óã¶ú";
 		for (auto &window : windows) {
 			std::string name = window.Name;
 			if (name.find(strchterm) != string::npos) {
-				filtereditems.push_back(window);
+				filtereditems.push_back(window);break;
 			}
 		}
 		return filtereditems;
-	})->onNewFrame([&](const RL::recordcapture::Image &img, const RL::recordcapture::Window &window) {
+	})->onNewFrame([&](const RL::RecordCapture::Image &img, const RL::RecordCapture::Window &window) {
+		realcounter.fetch_add(1);
 		static FILE* pRecordFile = nullptr;
 		if (nullptr == pRecordFile)
 			fopen_s(&pRecordFile,"app.raw","wb");
 		int nBufferLen = 4 * Width(window) * Height(window);
 		fwrite((void*)img.Data,nBufferLen, 1, pRecordFile);
-// 		auto r = realcounter.fetch_add(1);
-// 		auto s = std::to_string(r) + std::string("WINNEW_") + std::string(".jpg");
-// 		auto size = Width(img) * Height(img) * sizeof(RL::recordcapture::ImageBGRA);
-// 
-// 		auto imgbuffer(std::make_unique<unsigned char[]>(size));
-// 		ExtractAndConvertToRGBA(img, imgbuffer.get(), size);
-// 		tje_encode_to_file(s.c_str(), Width(img), Height(img), 4, (const unsigned char*)imgbuffer.get());
-
+		if (10 <= std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - onNewFramestart).count()) {
+			auto fps = realcounter * 1.0 / 10;
+			realcounter = 0;
+			onNewFramestart = std::chrono::high_resolution_clock::now();
+			logInstance->rlog(RLOG::LOG_DEBUG, "window fps: %0.2f", fps);
+		}
 		//std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()<<" onNewFrame. width: " <<Width(window)<<" height: "<<Height(window)<< std::endl;
-
 	})
 		->start_capturing();
 		
-	std::shared_ptr<RL::recordcapture::IScreenCaptureManager> speakergrabber =
-		RL::recordcapture::CreateCaptureConfiguration([]() {
-		auto speakers = RL::recordcapture::GetSpeakers();
+	std::shared_ptr<RL::RecordCapture::IScreenCaptureManager> speakergrabber =
+		RL::RecordCapture::CreateCaptureConfiguration([&]() {
+		auto speakers = RL::RecordCapture::GetSpeakers();
 		return speakers;
-	})->onAudioFrame([](const RL::recordcapture::AudioFrame &audioFrame) {
+	})->onAudioFrame([&](const RL::RecordCapture::AudioFrame &audioFrame) {
 		//cout<<audioFrame.renderTimeMs<<" onAudioFrame."<<std::endl;
+		realcounterAudio.fetch_add(1);
+		if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - onAudioFrameStart).count() > 10 * 1000) {
+			auto fpsaudio = realcounterAudio * 1.0 / 10;
+			realcounterAudio = 0;
+			onAudioFrameStart = std::chrono::high_resolution_clock::now();
+			logInstance->rlog(RLOG::LOG_DEBUG, "audio frame fps: %0.2f", fpsaudio);
+		}
 		static FILE* pOutPutFile = nullptr;
 		if (nullptr == pOutPutFile)
 			pOutPutFile = fopen("speaker.pcm", "wb");
@@ -138,11 +156,16 @@ int main()
 
 	int i = 0;
 	while (++i < 10) {
-		cout << "sleep 2 second." << endl;
+
+		logInstance->rlog(RLOG::LOG_DEBUG, "Sleep 2 seconds");
 		std::this_thread::sleep_for(std::chrono::seconds(2));
 	}
 
-	cout<<"<<<<<<<<<<record_test terminal."<<endl;
+	logInstance->rlog(RL::RecordCapture::IRecordLog::LOG_INFO, "%s", "=====record end........\n");
+
+
+
+
 	/*
 	std::cout<<"Sleep 1 second"<<std::endl;
 	std::this_thread::sleep_for(std::chrono::seconds(1));

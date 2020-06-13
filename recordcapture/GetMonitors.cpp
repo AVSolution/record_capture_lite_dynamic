@@ -3,7 +3,7 @@
 #include <DXGI.h>
 
 namespace RL {
-namespace recordcapture {
+namespace RecordCapture {
 
     float scaleFromDpi(int xdpi)
     {
@@ -62,5 +62,5 @@ namespace recordcapture {
         }
         return ret;
     }
-} // namespace recordcapture
+} // namespace RecordCapture
 } // namespace RL

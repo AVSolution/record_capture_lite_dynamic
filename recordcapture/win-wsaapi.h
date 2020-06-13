@@ -9,7 +9,7 @@
 #include <Audioclient.h>
 
 namespace RL {
-	namespace recordcapture {
+	namespace RecordCapture {
 
 		class WSAAPISource : public BaseFrameProcessor {
 			ComPtr<IMMDevice> device;
@@ -37,7 +37,7 @@ namespace RL {
 			DUPL_RETURN ProcessFrame(const Microphone& currentMicrophone);
 		};
 
-	}//namespace recordcapture.
+	}//namespace RecordCapture.
 }//namespace RL
 #endif
 

@@ -2,7 +2,7 @@
 #include <Dwmapi.h>
 
 namespace RL {
-namespace recordcapture {
+namespace RecordCapture {
 
     DUPL_RETURN GDIFrameProcessor::Init(std::shared_ptr<Thread_Data> data, const Monitor &monitor)
     {
@@ -85,7 +85,7 @@ namespace recordcapture {
     DUPL_RETURN GDIFrameProcessor::ProcessFrame(Window &selectedwindow)
     {
         auto Ret = DUPL_RETURN_SUCCESS;
-        auto windowrect = RL::recordcapture::GetWindowRect(SelectedWindow);
+        auto windowrect = RL::RecordCapture::GetWindowRect(SelectedWindow);
         ImageRect ret;
         memset(&ret, 0, sizeof(ret));
         ret.bottom = windowrect.ClientRect.bottom;
@@ -129,5 +129,5 @@ namespace recordcapture {
 
         return Ret;
     }
-} // namespace recordcapture
+} // namespace RecordCapture
 } // namespace RL

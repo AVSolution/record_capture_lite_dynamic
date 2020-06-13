@@ -44,7 +44,7 @@ extern "C" {
 }
 
 namespace RL {
-	namespace recordcapture {
+	namespace RecordCapture {
 		struct SC_LITE_EXTERN Point {
 			int x;
 			int y;
@@ -203,16 +203,19 @@ namespace RL {
 		SC_LITE_EXTERN std::vector<Speaker> GetSpeakers();
 		//will return all microphones
 		SC_LITE_EXTERN std::vector<Microphone> GetMicrophones();
+		//will return app local data Dir
+		SC_LITE_EXTERN std::string GetLocalAppDataPath();
 
-		typedef std::function<void(const RL::recordcapture::Image &img, const Window &window)> WindowCaptureCallback;
-		typedef std::function<void(const RL::recordcapture::Image &img, const Monitor &monitor)> ScreenCaptureCallback;
-		typedef std::function<void(const RL::recordcapture::Image *img, const MousePoint &mousepoint)> MouseCallback;
-		typedef std::function<void(const RL::recordcapture::AudioFrame &audioFrame)> SpeakerCaptureCallback;
-		typedef std::function<void(const RL::recordcapture::AudioFrame &audioFrame)> MicrophoneCaptureCallback;
+		typedef std::function<void(const RL::RecordCapture::Image &img, const Window &window)> WindowCaptureCallback;
+		typedef std::function<void(const RL::RecordCapture::Image &img, const Monitor &monitor)> ScreenCaptureCallback;
+		typedef std::function<void(const RL::RecordCapture::Image *img, const MousePoint &mousepoint)> MouseCallback;
+		typedef std::function<void(const RL::RecordCapture::AudioFrame &audioFrame)> SpeakerCaptureCallback;
+		typedef std::function<void(const RL::RecordCapture::AudioFrame &audioFrame)> MicrophoneCaptureCallback;
 		typedef std::function<std::vector<Monitor>()> MonitorCallback;
 		typedef std::function<std::vector<Window>()> WindowCallback;
 		typedef std::function<std::vector<Microphone>()> MicrophoneCallback;
 		typedef std::function<std::vector<Speaker>()> SpeakerCallback;
+		typedef std::function<std::string()> LogCallBack;
 
 		class SC_LITE_EXTERN IScreenCaptureManager {
 		public:
@@ -261,6 +264,22 @@ namespace RL {
 			//start capturing.
 			virtual std::shared_ptr<IScreenCaptureManager> start_capturing() = 0;
 		};
+
+		//the log for RecordCapture module.
+		class IRecordLog {
+		public:
+			enum {
+				LOG_ERROR = 100,
+				LOG_WARNING = 200,
+				LOG_INFO = 300,
+				LOG_DEBUG = 400
+			};
+
+		public :
+			virtual ~IRecordLog() {}
+			virtual void rlog(int log,const char* format,...) = 0;
+		};
+
 		// the callback of windowstocapture represents the list of monitors which should be captured. Users should return the list of monitors they want
 		// to be captured
 		SC_LITE_EXTERN std::shared_ptr<ICaptureConfiguration<ScreenCaptureCallback>> CreateCaptureConfiguration(const MonitorCallback &monitorstocapture);
@@ -273,7 +292,10 @@ namespace RL {
 		// the callback of microphonetocapture represents the list of microphone which should be captured. Users should return the list of microphone they want to
 		// to be captured
 		SC_LITE_EXTERN std::shared_ptr<IAudioCaptureConfiguration<MicrophoneCaptureCallback>> CreateCaptureConfiguration(const MicrophoneCallback &microhponertocapture);
-	}//namespace recordcapture
+
+		//the log handle.
+		SC_LITE_EXTERN std::shared_ptr<IRecordLog> CreateRecordLog(const LogCallBack &logcallback);
+	}//namespace RecordCapture
 }//namespace RL
 
 #endif 

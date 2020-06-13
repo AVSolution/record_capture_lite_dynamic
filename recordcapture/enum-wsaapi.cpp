@@ -11,7 +11,7 @@
 #include <iostream>
 
 namespace RL {
-	namespace recordcapture {
+	namespace RecordCapture {
 
 		char* _WTA(__in wchar_t* pszInBuf, __in int nInSize, __out char** pszOutBuf, __out int* pnOutSize)
 		{
@@ -84,7 +84,8 @@ namespace RL {
 					}
 				}
 
-				std::cout << "name: " << info.name << std::endl << " id:" << info.id << std::endl;
+				//std::cout << "name: " << info.name << std::endl << " id:" << info.id << std::endl;
+				LogInstance()->rlog(IRecordLog::LOG_INFO,"name: %s,id: %s",info.name,info.id);
 				audioDevices.push_back(info);
 			}
 			
@@ -115,5 +116,5 @@ namespace RL {
 
 			return microphones;
 		}
-	}//namespace recordcapture
+	}//namespace RecordCapture
 }//namespace RL

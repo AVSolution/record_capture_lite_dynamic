@@ -6,17 +6,17 @@
 
 #if (_MSC_VER >= 1700) && defined(_USING_V110_SDK71_)
 namespace RL {
-namespace recordcapture {
+namespace RecordCapture {
 
     DUPL_RETURN DXFrameProcessor::Init(std::shared_ptr<Thread_Data> data) { return DUPL_RETURN::DUPL_RETURN_ERROR_EXPECTED; }
     DUPL_RETURN DXFrameProcessor::ProcessFrame() { return DUPL_RETURN::DUPL_RETURN_ERROR_EXPECTED; }
 
-} // namespace recordcapture
+} // namespace RecordCapture
 } // namespace RL
 #else
 
 namespace RL {
-namespace recordcapture {
+namespace RecordCapture {
     struct DX_RESOURCES {
         Microsoft::WRL::ComPtr<ID3D11Device> Device;
         Microsoft::WRL::ComPtr<ID3D11DeviceContext> DeviceContext;
@@ -366,7 +366,7 @@ namespace recordcapture {
         ProcessCapture(Data->ScreenCaptureData, *this, SelectedMonitor, startsrc, MappingDesc.RowPitch);
         return DUPL_RETURN_SUCCESS;
     }
-} // namespace recordcapture
+} // namespace RecordCapture
 } // namespace RL
 
 #endif

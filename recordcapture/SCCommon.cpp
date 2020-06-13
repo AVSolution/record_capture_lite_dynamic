@@ -7,7 +7,7 @@
 #include <cstring>
 
 namespace RL {
-    namespace recordcapture {
+    namespace RecordCapture {
 
         void SanitizeRects(std::vector<ImageRect> &rects, const Image &img)
         {
@@ -249,5 +249,5 @@ namespace RL {
         // number of bytes per row, NOT including the Rowpadding
         int RowStride(const Image &img) { return sizeof(ImageBGRA) * Width(img); }
         const ImageBGRA *StartSrc(const Image &img) { return img.Data; }
-    } // namespace recordcapture
+    } // namespace RecordCapture
 } // namespace RL

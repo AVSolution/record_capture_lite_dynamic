@@ -4,7 +4,7 @@
 #include <windows.h>
 #include <Dwmapi.h>
 namespace RL {
-    namespace recordcapture {
+    namespace RecordCapture {
         class HDCWrapper {
         public:
             HDCWrapper() : DC(nullptr) {}

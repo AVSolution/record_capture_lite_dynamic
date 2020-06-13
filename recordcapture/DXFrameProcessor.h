@@ -11,7 +11,7 @@
 #pragma comment(lib, "d3d11.lib")
 
 namespace RL {
-    namespace recordcapture {
+    namespace RecordCapture {
         class DXFrameProcessor : public BaseFrameProcessor {
             Microsoft::WRL::ComPtr<ID3D11Device> Device;
             Microsoft::WRL::ComPtr<ID3D11DeviceContext> DeviceContext;
@@ -31,5 +31,5 @@ namespace RL {
             DUPL_RETURN ProcessFrame(const Monitor &currentmonitorinfo);
         };
 
-    } // namespace recordcapture
+    } // namespace RecordCapture
 } // namespace RL

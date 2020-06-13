@@ -12,7 +12,7 @@ using namespace std::chrono_literals;
 
 // this is internal stuff..
 namespace RL {
-namespace recordcapture {
+namespace RecordCapture {
     class ThreadManager {
 
         std::vector<std::thread> m_ThreadHandles;
@@ -143,6 +143,7 @@ namespace recordcapture {
                                                       // image is always new
             frameprocessor.ImageBuffer = std::make_unique<unsigned char[]>(frameprocessor.ImageBufferSize);
         }
+		LogInstance()->rlog(IRecordLog::LOG_INFO, "selected window width: %d,height:%d", wnd.Size.x, wnd.Size.y);
         auto ret = frameprocessor.Init(data, wnd);
         if (ret != DUPL_RETURN_SUCCESS) {
             return false;
@@ -213,5 +214,5 @@ namespace recordcapture {
 	void RunCaptureSpeaker(std::shared_ptr<Thread_Data>data,Speaker speaker);
 	void RunCaptureMicrophone(std::shared_ptr<Thread_Data>data,Microphone microphone);
 
-} // namespace recordcapture
+} // namespace RecordCapture
 } // namespace RL

@@ -7,10 +7,12 @@
 #include "Capture.h"
 #include <atomic>
 #include <thread>
+#include <iostream>
+#include <stdio.h>
 
 // this is INTERNAL DO NOT USE!
 namespace RL {
-namespace recordcapture {
+namespace RecordCapture {
 
     inline bool operator==(const ImageRect &a, const ImageRect &b)
     {
@@ -280,6 +282,107 @@ namespace recordcapture {
 			return &ptr;
 		}
 	};
+	
+	class SRecordCaptureLog: public IRecordLog {
+	public:
+		FILE* pFileLog = nullptr;
+		int nLogLen = 100;
+		LogCallBack logCallback = nullptr;
 
-} // namespace recordcapture
+	public:
+		static std::shared_ptr<SRecordCaptureLog> getInstance() {
+			static std::shared_ptr<SRecordCaptureLog> logInstance = nullptr;
+			if (logInstance == nullptr) {
+				logInstance = std::make_shared<SRecordCaptureLog>();
+			}
+			return logInstance;
+		}
+
+		virtual void rlog(int log,const char* format,...) override {
+
+			if (nullptr == pFileLog)
+				return;
+
+			va_list args;
+			va_start(args, format);
+			char buffer[1024];
+			vsnprintf(buffer, sizeof(buffer), format, args);
+			std::cout << buffer << std::endl;
+
+			std::string logLevel;
+			switch (log) {
+			case LOG_ERROR:
+				logLevel = "LOG_ERROR"; break;
+			case LOG_INFO:
+				logLevel = "LOG_INFO"; break;
+			case LOG_DEBUG:
+				logLevel = "LOG_DEBUG"; break;
+			case LOG_WARNING:
+				logLevel = "LOG_WARNING"; break;
+			default:logLevel = "DEFAULT"; break;
+			}
+
+			fprintf(pFileLog,"[%s]%s %s\n",logLevel.c_str(),getCurrentSystemTime().c_str(),buffer);
+			fflush(pFileLog);
+
+			va_end(args);
+		}
+
+	protected:
+		const std::string getCurrentSystemTime()
+		{
+			using namespace std;
+			using namespace std::chrono;
+
+			system_clock::time_point now = system_clock::now();
+			system_clock::duration tp = now.time_since_epoch();
+
+			tp -= duration_cast<seconds>(tp);
+
+			time_t tt = system_clock::to_time_t(now);
+			struct tm* ptm = localtime(&tt);
+			char date[60] = { 0 };
+			sprintf(date, "[%d-%02d-%02d %02d:%02d:%02d:%03d]",
+				(int)ptm->tm_year + 1900, (int)ptm->tm_mon + 1, (int)ptm->tm_mday,
+				(int)ptm->tm_hour, (int)ptm->tm_min, (int)ptm->tm_sec,static_cast<unsigned>(tp/milliseconds(1)));
+			return std::string(date);
+		}
+
+	public:
+		SRecordCaptureLog() {
+			std::cout << "ctor" << std::endl;
+			assert(pFileLog == nullptr);
+			if (logCallback) {
+				std::string strLogPath = logCallback();
+				pFileLog = fopen(strLogPath.c_str(), "a+");
+			}
+		}
+		~SRecordCaptureLog() {
+			std::cout << "dtor" << std::endl;
+			if (pFileLog) {
+				fclose(pFileLog);
+				pFileLog = nullptr;
+			}
+		}
+
+		void start(const LogCallBack &logcallback) {
+			std::cout << "start" << std::endl;
+			if (logcallback) {
+				logCallback = logcallback;
+				if (logCallback && pFileLog == nullptr) {
+					std::string strLogPath = logCallback();
+					if (!strLogPath.empty()) {
+						//check folder valid.otherwrise create directory.
+						//todo.
+						//open log file handle.
+						pFileLog = fopen(strLogPath.c_str(), "a+");
+					}
+				}
+			}
+		}
+	};
+
+#define LogInstance SRecordCaptureLog::getInstance
+
+} // namespace RecordCapture
 } // namespace RL

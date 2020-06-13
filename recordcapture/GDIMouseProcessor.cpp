@@ -2,7 +2,7 @@
 #include "GDIHelpers.h"
 
 namespace RL {
-namespace recordcapture {
+namespace RecordCapture {
 
     DUPL_RETURN GDIMouseProcessor::Init(std::shared_ptr<Thread_Data> data)
     {
@@ -119,5 +119,5 @@ namespace recordcapture {
         return Ret;
     }
 
-} // namespace recordcapture
+} // namespace RecordCapture
 } // namespace RL

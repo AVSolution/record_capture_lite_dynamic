@@ -2,15 +2,15 @@
 #include <assert.h>
 #include <algorithm>
 
-RL::recordcapture::ThreadManager::ThreadManager()
+RL::RecordCapture::ThreadManager::ThreadManager()
 {
 }
-RL::recordcapture::ThreadManager::~ThreadManager()
+RL::RecordCapture::ThreadManager::~ThreadManager()
 {
     Join();
 }
 
-void RL::recordcapture::ThreadManager::Init(const std::shared_ptr<Thread_Data>& data)
+void RL::RecordCapture::ThreadManager::Init(const std::shared_ptr<Thread_Data>& data)
 {
     assert(m_ThreadHandles.empty());
 
@@ -24,24 +24,26 @@ void RL::recordcapture::ThreadManager::Init(const std::shared_ptr<Thread_Data>& 
         m_ThreadHandles.resize(monitors.size() + (data->ScreenCaptureData.OnMouseChanged ? 1 : 0)); // add another thread for mouse capturing if needed
 
         for (size_t i = 0; i < monitors.size(); ++i) {
-            m_ThreadHandles[i] = std::thread(&RL::recordcapture::RunCaptureMonitor, data, monitors[i]);
+            m_ThreadHandles[i] = std::thread(&RL::RecordCapture::RunCaptureMonitor, data, monitors[i]);
         }
         if (data->ScreenCaptureData.OnMouseChanged) {
             m_ThreadHandles.back() = std::thread([data] {
-                RL::recordcapture::RunCaptureMouse(data);
+                RL::RecordCapture::RunCaptureMouse(data);
             });
         }
 
     }
     else if (data->WindowCaptureData.getThingsToWatch) {
         auto windows = data->WindowCaptureData.getThingsToWatch();
+		if (windows.size() == 0)
+			LogInstance()->rlog(IRecordLog::LOG_ERROR, "do not find special app window. !!!!");
         m_ThreadHandles.resize(windows.size() + (data->WindowCaptureData.OnMouseChanged ? 1 : 0)); // add another thread for mouse capturing if needed
         for (size_t i = 0; i < windows.size(); ++i) {
-            m_ThreadHandles[i] = std::thread(&RL::recordcapture::RunCaptureWindow, data, windows[i]);
+            m_ThreadHandles[i] = std::thread(&RL::RecordCapture::RunCaptureWindow, data, windows[i]);
         }
         if (data->WindowCaptureData.OnMouseChanged) {
             m_ThreadHandles.back() = std::thread([data] {
-                RL::recordcapture::RunCaptureMouse(data);
+                RL::RecordCapture::RunCaptureMouse(data);
             });
         }
     }
@@ -49,17 +51,17 @@ void RL::recordcapture::ThreadManager::Init(const std::shared_ptr<Thread_Data>& 
 		auto speakers = data->SpeakerCaptureData.getThingsToWatch();
 		m_ThreadHandles.resize(speakers.size());
 		for (size_t i = 0; i < speakers.size(); ++i)
-			m_ThreadHandles[i] = std::thread(&RL::recordcapture::RunCaptureSpeaker, data, speakers[i]);
+			m_ThreadHandles[i] = std::thread(&RL::RecordCapture::RunCaptureSpeaker, data, speakers[i]);
 	}
 	else if (data->MicrophoneCaptureData.getThingsToWatch && data->MicrophoneCaptureData.onAudioFrame) {
 		auto microphones = data->MicrophoneCaptureData.getThingsToWatch();//the microphone list only your selected microphone.
 		m_ThreadHandles.resize(microphones.size());
 		for (size_t i = 0; i < microphones.size(); ++i)
-			m_ThreadHandles[i] = std::thread(&RL::recordcapture::RunCaptureMicrophone, data, microphones[i]);
+			m_ThreadHandles[i] = std::thread(&RL::RecordCapture::RunCaptureMicrophone, data, microphones[i]);
 	}
 }
 
-void RL::recordcapture::ThreadManager::Join()
+void RL::RecordCapture::ThreadManager::Join()
 {
     for (auto& t : m_ThreadHandles) {
         if (t.joinable()) {

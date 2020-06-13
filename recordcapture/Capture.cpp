@@ -39,7 +39,7 @@ void releaseRecordInstance(void* pInstance) {
 }
 
 namespace RL {
-	namespace recordcapture {
+	namespace RecordCapture {
 
 		bool isMonitorInsideBounds(const std::vector<Monitor> &monitors, const Monitor &monitor)
 		{
@@ -275,5 +275,12 @@ namespace RL {
 			impl->Thread_Data_->MicrophoneCaptureData.getThingsToWatch = microhponertocapture;
 			return std::make_shared<MicrophoneCaptureConfiguration>(impl);
 		}
-	}// namespace recordcapture
+
+		std::shared_ptr<IRecordLog> CreateRecordLog(const LogCallBack &logcallback)
+		{
+			std::shared_ptr<SRecordCaptureLog> recordLog = SRecordCaptureLog::getInstance();
+			recordLog->start(logcallback);
+			return recordLog;
+		}
+	}// namespace RecordCapture
 }//namespace RL

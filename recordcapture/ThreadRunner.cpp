@@ -13,7 +13,7 @@
 #include <string>
 
 namespace RL {
-namespace recordcapture {
+namespace RecordCapture {
 
     template <class T> void ProcessExit(DUPL_RETURN Ret, T *TData)
     {
@@ -93,5 +93,5 @@ namespace recordcapture {
 		AudioFrame audioframe;
 		data->MicrophoneCaptureData.onAudioFrame(std::ref(audioframe));
 	}
-} // namespace recordcapture
+} // namespace RecordCapture
 } // namespace RL

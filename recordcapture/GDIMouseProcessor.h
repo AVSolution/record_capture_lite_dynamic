@@ -5,7 +5,7 @@
 #include "GDIHelpers.h"
 
 namespace RL {
-    namespace recordcapture {
+    namespace RecordCapture {
 
         class GDIMouseProcessor : public BaseFrameProcessor {
 

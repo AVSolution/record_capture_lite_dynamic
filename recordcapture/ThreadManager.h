@@ -202,6 +202,9 @@ namespace RecordCapture {
 				}
 				return true;
 			}
+			while (data->CommonData_.Paused) {
+				std::this_thread::sleep_for(10ms);
+			}
 		}
 		return true;
 	}

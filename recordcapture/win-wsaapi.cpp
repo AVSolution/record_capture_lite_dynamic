@@ -89,10 +89,12 @@ namespace RL {
 				hr = capture->GetBuffer(std::addressof(buffer), std::addressof(framesAvailable),
 					std::addressof(dflage),nullptr,nullptr);
 				if (SUCCEEDED(hr)) {
+
 					if (framesAvailable > 0) {
-						if (dflage & AUDCLNT_BUFFERFLAGS_SILENT)
-							buffer = nullptr;
+
 						frame = framesAvailable * wfex->nChannels * wfex->wBitsPerSample / 8;
+						if (dflage & AUDCLNT_BUFFERFLAGS_SILENT)
+							memset(buffer, 0, frame);
 						if (Data->SpeakerCaptureData.onAudioFrame) {
 							AudioFrame audioFrame;
 							audioFrame.buffer = (void*)buffer;

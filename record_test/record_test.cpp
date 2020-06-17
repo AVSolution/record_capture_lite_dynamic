@@ -3,14 +3,14 @@
 
 #include "../RecordCapture/Capture.h"
 //#include "../RecordCapture/SCCommon.h"
-#include "./Output/include/IWinMediaStreamer.h"
-#include "./Output/include/AudioSampleFormatConvert.h"
+#include "../MediaStream/include/IWinMediaStreamer.h"
+#include "../MediaStream/include/AudioSampleFormatConvert.h"
 #ifdef _DEBUG
 #pragma comment(lib,"../bind/RecordCapture.lib")
-#pragma comment(lib,"./Output/Debug/MediaStreamer.lib")
+#pragma comment(lib,"../MediaStream/Debug/MediaStreamer.lib")
 #else 
 #pragma  comment(lib,"../bin/RecordCapture.lib")
-#pragma comment(lib,"./Output/Release/MediaStreamer.lib")
+#pragma comment(lib,"../MediaStream/Release/MediaStreamer.lib")
 #endif
 
 #include <algorithm>

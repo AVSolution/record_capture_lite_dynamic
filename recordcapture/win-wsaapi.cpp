@@ -55,7 +55,7 @@ namespace RL {
 				return DUPL_RETURN_ERROR_EXPECTED;
 
 			LogInstance()->rlog(IRecordLog::LOG_INFO, 
-				"default audio device speaker SamplerPerSec: %d\n\t, nChannel: %d\n\t, BitPerSample: %d\n\t",
+				"default audio device speaker SamplerPerSec: %d, nChannel: %d, BitPerSample: %d",
 				wfex->nSamplesPerSec,wfex->nChannels,wfex->wBitsPerSample);
 
 			hr = client->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_LOOPBACK, BUFFER_TIME_100NS, 0, wfex,nullptr);

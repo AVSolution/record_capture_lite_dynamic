@@ -47,7 +47,7 @@ namespace RecordCapture {
         if (!strlen(w.Name)) {
             return true;
         }
-        std::cout << "enum window name: " << w.Name <<" handle: "<<hwnd<< std::endl;
+        //std::cout << "enum window name: " << w.Name <<" handle: "<<hwnd<< std::endl;
 		LogInstance()->rlog(IRecordLog::LOG_INFO, "enum window name: %s,hwnd: %p", w.Name, hwnd);
 
         srch *s = (srch *)lParam;

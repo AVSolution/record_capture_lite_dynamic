@@ -5,6 +5,7 @@ class RecordCaptureConan(ConanFile):
     license = "MIT"
     url = "https://github.com/AVSolution/record_capture_lite_dynamic.git"
     settings = "os", "compiler", "build_type", "arch"
+    requests = "RPC/0.0.3@bixin/stable"
     generators = "visual_studio"
     exports_sources = "recordcapture*","!*.vs"
 	

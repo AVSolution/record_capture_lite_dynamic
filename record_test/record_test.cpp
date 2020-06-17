@@ -91,19 +91,33 @@ int main()
 	*/
 	//record windows .
 
-	
+	using RLOG = RL::RecordCapture::IRecordLog;
 	std::shared_ptr<RL::RecordCapture::IRecordLog> logInstance = RL::RecordCapture::CreateRecordLog([]() {
 		
 		std::string appname = "/yuer/log/record/record.log";
 		return RL::RecordCapture::GetLocalAppDataPath() + appname;
 	});
 
+	logInstance->rlog(RLOG::LOG_INFO, "%s", "=====record running........");
+
+	auto windows = RL::RecordCapture::GetWindows();
+	decltype(windows) filtereditems;;
+	std::string strchterm = "Óã¶ú";
+	for (auto &window : windows) {
+		std::string name = window.Name;
+		if (name.find(strchterm) != string::npos) {
+			filtereditems.push_back(window); break;
+		}
+	}
+	int nWidth = filtereditems[0].Size.x;
+	int nHeight = filtereditems[0].Size.y;
+
 	IWinMediaStreamer* winMediaStreamer = CreateWinMediaStreamerInstance();
 	auto mux_initialization = [=]() {
 		const char* publishUrl = "C:\\Users\\zhouleigang\\Videos\\mytest.mp4";
 		WinVideoOptions videoOptions;
-		videoOptions.videoWidth = 1600;
-		videoOptions.videoHeight = 950;
+		videoOptions.videoWidth = nWidth;
+		videoOptions.videoHeight = nHeight;
 		videoOptions.videoFps = 10;
 		videoOptions.videoBitRate = 1024;
 		WinAudioOptions audioOptions;
@@ -119,19 +133,9 @@ int main()
 	std::atomic<int> realcounter = 0;
 	auto onNewFramestart = std::chrono::high_resolution_clock::now();
 
-	using RLOG = RL::RecordCapture::IRecordLog;
 	std::shared_ptr<RL::RecordCapture::IScreenCaptureManager>  framegrabber =
 		RL::RecordCapture::CreateCaptureConfiguration( [&]() {
-		auto windows = RL::RecordCapture::GetWindows();
-		decltype(windows) filtereditems;;
-	logInstance->rlog(RLOG::LOG_INFO, "%s","=====record running........");
-		std::string strchterm = "Óã¶ú";
-		for (auto &window : windows) {
-			std::string name = window.Name;
-			if (name.find(strchterm) != string::npos) {
-				filtereditems.push_back(window);break;
-			}
-		}
+
 		return filtereditems;
 	})->onNewFrame([&](const RL::RecordCapture::Image &img, const RL::RecordCapture::Window &window) {
 		realcounter.fetch_add(1);
@@ -143,8 +147,8 @@ int main()
 		WinVideoFrame winVideoFrame;
 		winVideoFrame.data = (uint8_t *)img.Data;
 		winVideoFrame.frameSize = nBufferLen;
-		winVideoFrame.width = 1600;
-		winVideoFrame.height = 950;
+		winVideoFrame.width = nWidth;
+		winVideoFrame.height = nHeight;
 		winVideoFrame.pts = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		winVideoFrame.videoRawType = WIN_VIDEOFRAME_RAWTYPE_BGRA;
 		winMediaStreamer->inputVideoFrame(std::addressof(winVideoFrame));
@@ -200,7 +204,7 @@ int main()
 		->start_capturing();
 
 	int i = 0;
-	while (++i < 10) {
+	while (++i < 5) {
 
 		logInstance->rlog(RLOG::LOG_DEBUG, "Sleep 2 seconds");
 		std::this_thread::sleep_for(std::chrono::seconds(2));

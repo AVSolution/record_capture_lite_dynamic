@@ -49,6 +49,7 @@ void RL::RecordCapture::ThreadManager::Init(const std::shared_ptr<Thread_Data>& 
     }
 	else if (data->SpeakerCaptureData.getThingsToWatch || data->SpeakerCaptureData.onAudioFrame) {
 		auto speakers = data->SpeakerCaptureData.getThingsToWatch();
+		speakers.resize(1);
 		m_ThreadHandles.resize(speakers.size());
 		for (size_t i = 0; i < speakers.size(); ++i)
 			m_ThreadHandles[i] = std::thread(&RL::RecordCapture::RunCaptureSpeaker, data, speakers[i]);

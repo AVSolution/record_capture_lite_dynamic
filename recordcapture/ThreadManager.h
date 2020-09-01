@@ -143,7 +143,7 @@ namespace RecordCapture {
                                                       // image is always new
             frameprocessor.ImageBuffer = std::make_unique<unsigned char[]>(frameprocessor.ImageBufferSize);
         }
-		LogInstance()->rlog(IRecordLog::LOG_INFO, "selected window width: %d,height:%d", wnd.Size.x, wnd.Size.y);
+		LogInstance()->rlog(IRecordLog::LOG_INFO, "selected window handle: %p ,width: %d,height:%d",reinterpret_cast<HWND>(wnd.Handle), wnd.Size.x, wnd.Size.y);
         auto ret = frameprocessor.Init(data, wnd);
         if (ret != DUPL_RETURN_SUCCESS) {
             return false;

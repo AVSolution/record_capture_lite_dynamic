@@ -95,7 +95,7 @@ namespace RL {
 
 		std::vector<Speaker> GetSpeakers() {
 			std::vector<Speaker> speakers;
-			std::vector<AudioDeviceInfo> audioDevices = GetAudioDevice(true);
+			std::vector<AudioDeviceInfo> audioDevices = GetAudioDevice(false);
 			for_each(audioDevices.begin(), audioDevices.end(), [&](AudioDeviceInfo& audioDeviceInfo) {
 				Speaker speaker;
 				speaker.audioDeviceInfo = audioDeviceInfo;

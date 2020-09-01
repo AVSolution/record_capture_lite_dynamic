@@ -69,6 +69,25 @@ public:
 	}
 };
 
+#define VOLUMEMAX   32767
+int SimpleCalculate_DB(short* pcmData, int sample)
+{
+	signed short ret = 0;
+	if (sample > 0) {
+		int sum = 0;
+		signed short* pos = (signed short *)pcmData;
+		for (int i = 0; i < sample; i++) {
+			sum += abs(*pos);
+			pos++;
+		}
+		ret = sum * 500.0 / (sample * VOLUMEMAX);
+		if (ret >= 100) {
+			ret = 100;
+		}
+	}
+	return ret;
+}
+
 int main()
 {
 	/*
@@ -109,15 +128,25 @@ int main()
 			filtereditems.push_back(window); break;
 		}
 	}
-	int nWidth = filtereditems[0].Size.x;
-	int nHeight = filtereditems[0].Size.y;
-
+	int nWidth = 1920;
+	int nHeight = 1080;
+	if (filtereditems.size()) {
+		nWidth = filtereditems[0].Size.x;
+		nHeight = filtereditems[0].Size.y; 
+		logInstance->rlog(RLOG::LOG_INFO, "source width: %d,height:%d", nWidth, nHeight);
+		if (nWidth % 2)
+			nWidth -= 1;
+		if (nHeight % 2)
+			nHeight -= 1;
+		logInstance->rlog(RLOG::LOG_INFO, "Destination width: %d,height:%d",nWidth,nHeight);
+	}
+	
 	IWinMediaStreamer* winMediaStreamer = CreateWinMediaStreamerInstance();
 	auto mux_initialization = [=]() {
-		const char* publishUrl = "C:\\Users\\zhouleigang\\Videos\\mytest.mp4";
+		const char* publishUrl = "C:\\tmp\\cris.mp4";
 		WinVideoOptions videoOptions;
-		videoOptions.videoWidth = nWidth;
-		videoOptions.videoHeight = nHeight;
+		videoOptions.videoWidth =  nWidth;
+		videoOptions.videoHeight =  nHeight;
 		videoOptions.videoFps = 10;
 		videoOptions.videoBitRate = 1024;
 		WinAudioOptions audioOptions;
@@ -125,7 +154,8 @@ int main()
 		audioOptions.audioSampleRate = 48000;
 		audioOptions.audioNumChannels = 2;
 		audioOptions.isExternalAudioInput = true;
-		winMediaStreamer->initialize(publishUrl, videoOptions, audioOptions);
+		std::string mediaLog = RL::RecordCapture::GetLocalAppDataPath() + "/yuer/log/record/";
+		winMediaStreamer->initialize(publishUrl, videoOptions, audioOptions, WIN_MEDIA_STREAMER_SLK, mediaLog.c_str());
 		winMediaStreamer->start();
 	};
 	mux_initialization();
@@ -143,12 +173,12 @@ int main()
 		if (nullptr == pRecordFile)
 			fopen_s(&pRecordFile,"app.raw","wb");
 		int nBufferLen = 4 * Width(window) * Height(window);
-		//fwrite((void*)img.Data,nBufferLen, 1, pRecordFile);
+		fwrite((void*)img.Data,nBufferLen, 1, pRecordFile);
 		WinVideoFrame winVideoFrame;
 		winVideoFrame.data = (uint8_t *)img.Data;
 		winVideoFrame.frameSize = nBufferLen;
-		winVideoFrame.width = nWidth;
-		winVideoFrame.height = nHeight;
+		winVideoFrame.width = window.Size.x;
+		winVideoFrame.height = window.Size.y;
 		winVideoFrame.pts = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		winVideoFrame.videoRawType = WIN_VIDEOFRAME_RAWTYPE_BGRA;
 		winMediaStreamer->inputVideoFrame(std::addressof(winVideoFrame));
@@ -161,7 +191,7 @@ int main()
 		//std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()<<" onNewFrame. width: " <<Width(window)<<" height: "<<Height(window)<< std::endl;
 	})
 		->start_capturing();
-		
+	
 	std::atomic<int> realcounterAudio = 0;
 	auto onAudioFrameStart = std::chrono::high_resolution_clock::now();
 	std::unique_ptr<unsigned char[]> outAudioBuffer = nullptr;
@@ -193,24 +223,41 @@ int main()
 		if (nullptr == pOutPutFile)
 			pOutPutFile = fopen("speaker.pcm", "wb");
 		if (audioFrame.buffer) {
-			//fwrite(outAudioBuffer.get(), len/2, 1, pOutPutFile);
+			fwrite(outAudioBuffer.get(), len/2, 1, pOutPutFile);
+			//fwrite(audioFrame.buffer,len,1,pOutPutFile);
 			WinAudioFrame winAudioFrame;
 			winAudioFrame.data = outAudioBuffer.get();
 			winAudioFrame.frameSize = len / 2;
 			winAudioFrame.pts = audioFrame.renderTimeMs;
 			winMediaStreamer->inputAudioFrame(&winAudioFrame);
+			//printf("%d\n", SimpleCalculate_DB((short*)outAudioBuffer.get(), audioFrame.samples));
 		}
 	})
 		->start_capturing();
+	
+
+	/*
+	std::atomic<int> realcounterMic = 0;
+	auto onMicFrameStart = std::chrono::high_resolution_clock::now();
+	std::shared_ptr<RL::RecordCapture::IScreenCaptureManager> micgrabber =
+		RL::RecordCapture::CreateCaptureConfiguration([&]() {
+		auto microphones = RL::RecordCapture::GetMicrophones();
+		return microphones;
+	})->onAudioFrame([&](const RL::RecordCapture::AudioFrame &audioFrame) {
+			
+	})->start_capturing();
+	*/
 
 	int i = 0;
-	while (++i < 5) {
+	while (++i < 4) {
 
 		logInstance->rlog(RLOG::LOG_DEBUG, "Sleep 2 seconds");
 		std::this_thread::sleep_for(std::chrono::seconds(2));
 	}
+	
 
 	speakergrabber->pause();
+	//micgrabber->pause();
 	framegrabber->pause();
 	std::this_thread::sleep_for(std::chrono::seconds(1));
 
@@ -221,7 +268,7 @@ int main()
 
 	logInstance->rlog(RL::RecordCapture::IRecordLog::LOG_INFO, "%s", "=====record end........\n");
 
-
+	//system("pause");
 
 	/*
 	std::cout<<"Sleep 1 second"<<std::endl;

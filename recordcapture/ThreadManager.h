@@ -209,6 +209,40 @@ namespace RecordCapture {
 		return true;
 	}
 
+	template <class T, class F> bool TryCaptureMicrophone(const F &data, Microphone &microphone)
+	{
+		T frameprocessor;
+		auto ret = frameprocessor.Init(data, microphone);
+		if (ret != DUPL_RETURN_SUCCESS) {
+			std::cout << "microphone module init failed." << std::endl;
+			return false;
+		}
+		while (!data->CommonData_.TerminateThreadsEvent) {
+			// get a copy of the shared_ptr in a safe way
+// 			auto timer = std::atomic_load(&data->SpeakerCaptureData.FrameTimer);
+// 			timer->start();
+			ret = frameprocessor.ProcessFrame(microphone);
+			if (ret != DUPL_RETURN_SUCCESS) {
+				std::cout << "microphone module processFrame failed.." << std::endl;
+				if (ret == DUPL_RETURN_ERROR_EXPECTED) {
+					// The system is in a transition state so request the duplication be restarted
+					data->CommonData_.ExpectedErrorEvent = true;
+					std::cout << "Exiting Thread due to expected error " << std::endl;
+				}
+				else {
+					// Unexpected error so exit the application
+					data->CommonData_.UnexpectedErrorEvent = true;
+					std::cout << "Exiting Thread due to Unexpected error " << std::endl;
+				}
+				return true;
+			}
+			while (data->CommonData_.Paused) {
+				std::this_thread::sleep_for(10ms);
+			}
+		}
+		return true;
+	}
+
     void RunCaptureMonitor(std::shared_ptr<Thread_Data> data, Monitor monitor);
     void RunCaptureWindow(std::shared_ptr<Thread_Data> data, Window window);
 

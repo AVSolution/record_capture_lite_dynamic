@@ -89,9 +89,7 @@ namespace RecordCapture {
 
 	void RunCaptureMicrophone(std::shared_ptr<Thread_Data>data, Microphone microphone)
 	{
-		std::cout << "RunCaptureMicrophone thread." << std::endl;
-		AudioFrame audioframe;
-		data->MicrophoneCaptureData.onAudioFrame(std::ref(audioframe));
+		TryCaptureMicrophone<WSAAPISource>(data, microphone);
 	}
 } // namespace RecordCapture
 } // namespace RL

@@ -31,6 +31,8 @@
 #define LODEPNG_COMPILE_DISK
 #include "lodepng.h"
 
+#define  RECORD
+
 using namespace std;
 
 void ExtractAndConvertToRGBA(const RL::RecordCapture::Image &img, unsigned char *dst, size_t dst_size)
@@ -158,7 +160,9 @@ int main()
 		winMediaStreamer->initialize(publishUrl, videoOptions, audioOptions, WIN_MEDIA_STREAMER_SLK, mediaLog.c_str());
 		winMediaStreamer->start();
 	};
+#ifdef RECORD
 	mux_initialization();
+#endif
 
 	std::atomic<int> realcounter = 0;
 	auto onNewFramestart = std::chrono::high_resolution_clock::now();
@@ -181,7 +185,9 @@ int main()
 		winVideoFrame.height = window.Size.y;
 		winVideoFrame.pts = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
 		winVideoFrame.videoRawType = WIN_VIDEOFRAME_RAWTYPE_BGRA;
+#ifdef RECORD
 		winMediaStreamer->inputVideoFrame(std::addressof(winVideoFrame));
+#endif
 		if (10 <= std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - onNewFramestart).count()) {
 			auto fps = realcounter * 1.0 / 10;
 			realcounter = 0;
@@ -217,7 +223,7 @@ int main()
 			auto fpsaudio = realcounterAudio * 1.0 / 10;
 			realcounterAudio = 0;
 			onAudioFrameStart = std::chrono::high_resolution_clock::now();
-			logInstance->rlog(RLOG::LOG_DEBUG, "audio frame fps: %0.2f", fpsaudio);
+			logInstance->rlog(RLOG::LOG_DEBUG, "speaker audio frame fps: %0.2f", fpsaudio);
 		}
 		static FILE* pOutPutFile = nullptr;
 		if (nullptr == pOutPutFile)
@@ -229,42 +235,71 @@ int main()
 			winAudioFrame.data = outAudioBuffer.get();
 			winAudioFrame.frameSize = len / 2;
 			winAudioFrame.pts = audioFrame.renderTimeMs;
+#ifdef RECORD
 			winMediaStreamer->inputAudioFrame(&winAudioFrame);
+#endif
 			//printf("%d\n", SimpleCalculate_DB((short*)outAudioBuffer.get(), audioFrame.samples));
 		}
 	})
 		->start_capturing();
 	
-
-	/*
 	std::atomic<int> realcounterMic = 0;
 	auto onMicFrameStart = std::chrono::high_resolution_clock::now();
+	std::unique_ptr<unsigned char[]> outMicAudioBuffer = nullptr;
 	std::shared_ptr<RL::RecordCapture::IScreenCaptureManager> micgrabber =
 		RL::RecordCapture::CreateCaptureConfiguration([&]() {
 		auto microphones = RL::RecordCapture::GetMicrophones();
 		return microphones;
 	})->onAudioFrame([&](const RL::RecordCapture::AudioFrame &audioFrame) {
-			
-	})->start_capturing();
-	*/
+		//cout<<audioFrame.renderTimeMs<<" onAudioFrame."<<std::endl;
+		int len = audioFrame.samples * audioFrame.channels * audioFrame.bytesPerSample;
+		if (outMicAudioBuffer == nullptr) {
+			outMicAudioBuffer = std::make_unique<unsigned char[]>(len / 2);
+		}
 
+		for (int i = 0; i < len / 4; i++) {
+			float ff = *(float*)((uint8_t*)audioFrame.buffer + i * 4);
+			short ss = ff * 32768;
+			memcpy(outMicAudioBuffer.get() + i * 2, &ss, 2);
+		}
+		if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - onMicFrameStart).count() > 10 * 1000) {
+			auto fpsaudio = realcounterMic * 1.0 / 10;
+			realcounterMic = 0;
+			onMicFrameStart = std::chrono::high_resolution_clock::now();
+			logInstance->rlog(RLOG::LOG_DEBUG, "mic audio frame fps: %0.2f", fpsaudio);
+		}
+		static FILE* pOutPutFile = nullptr;
+		if (nullptr == pOutPutFile)
+			pOutPutFile = fopen("microphone.pcm", "wb");
+		if (audioFrame.buffer) {
+			fwrite(outMicAudioBuffer.get(), len / 2, 1, pOutPutFile);
+			WinAudioFrame winMicAudioFrame;
+			winMicAudioFrame.data = outMicAudioBuffer.get();
+			winMicAudioFrame.frameSize = len / 2;
+			winMicAudioFrame.pts = audioFrame.renderTimeMs;
+#ifdef RECORD
+			winMediaStreamer->inputAudioFrame(&winMicAudioFrame);
+#endif
+		}
+	})->start_capturing();
+	
 	int i = 0;
 	while (++i < 4) {
-
 		logInstance->rlog(RLOG::LOG_DEBUG, "Sleep 2 seconds");
 		std::this_thread::sleep_for(std::chrono::seconds(2));
 	}
 	
-
 	speakergrabber->pause();
-	//micgrabber->pause();
+	micgrabber->pause();
 	framegrabber->pause();
 	std::this_thread::sleep_for(std::chrono::seconds(1));
 
+#ifdef RECORD
 	winMediaStreamer->stop();
 	winMediaStreamer->terminate();
 	if (winMediaStreamer)
 		DestroyWinMediaStreamerInstance(std::addressof(winMediaStreamer));
+#endif
 
 	logInstance->rlog(RL::RecordCapture::IRecordLog::LOG_INFO, "%s", "=====record end........\n");
 
@@ -279,7 +314,6 @@ int main()
 	std::this_thread::sleep_for(std::chrono::seconds(5));
 	*/
 }
-
 
 void MediaStreamerTestListener(void* owner, int event, int ext1, int ext2)
 {

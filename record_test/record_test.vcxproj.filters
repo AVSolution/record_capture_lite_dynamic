@@ -21,12 +21,18 @@
     <ClCompile Include="lodepng.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="CicleBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="lodepng.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="tiny_jpeg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="CicleBuffer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

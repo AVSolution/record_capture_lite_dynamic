@@ -158,10 +158,12 @@
   <ItemGroup>
     <ClCompile Include="lodepng.cpp" />
     <ClCompile Include="record_test.cpp" />
+    <ClCompile Include="CicleBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="lodepng.h" />
     <ClInclude Include="tiny_jpeg.h" />
+    <ClInclude Include="CicleBuffer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

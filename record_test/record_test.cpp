@@ -5,6 +5,9 @@
 //#include "../RecordCapture/SCCommon.h"
 #include "../MediaStream/include/IWinMediaStreamer.h"
 #include "../MediaStream/include/AudioSampleFormatConvert.h"
+#include "CicleBuffer.h"
+#include <DbgHelp.h>
+#pragma comment(lib,"Dbghelp.lib")
 #ifdef _DEBUG
 #pragma comment(lib,"../bind/RecordCapture.lib")
 #pragma comment(lib,"../MediaStream/Debug/MediaStreamer.lib")
@@ -32,6 +35,7 @@
 #include "lodepng.h"
 
 #define  RECORD
+#define  ADD_MIC
 
 using namespace std;
 
@@ -90,6 +94,43 @@ int SimpleCalculate_DB(short* pcmData, int sample)
 	return ret;
 }
 
+int16_t  MixerAddS16(int16_t var1, int16_t var2)
+{
+	static const int32_t kMaxInt16 = 32767;
+	static const int32_t kMinInt16 = -32768;
+	int32_t tmp = (int32_t)var1 + (int32_t)var2;
+	int16_t out16;
+
+	if (tmp > kMaxInt16) {
+		out16 = kMaxInt16;
+	}
+	else if (tmp < kMinInt16) {
+		out16 = kMinInt16;
+	}
+	else {
+		out16 = (int16_t)tmp;
+	}
+
+	return out16;
+}
+
+void MixerAddS16(int16_t* src1, const int16_t* src2, size_t size)
+{
+	for (size_t i = 0; i < size; ++i) {
+		src1[i] = MixerAddS16(src1[i], src2[i]);
+	}
+}
+
+static void unexpectCrashFunction(_EXCEPTION_POINTERS* excptr) 
+{
+	HANDLE hFile = CreateFile("MiniDump.dmp", GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+	MINIDUMP_EXCEPTION_INFORMATION mei{ ::GetCurrentThreadId(), excptr, TRUE };
+	if (::MiniDumpWriteDump(::GetCurrentProcess(), ::GetCurrentProcessId(),hFile , MiniDumpNormal, &mei, NULL, NULL))
+	{
+		cout<<"crash occur!!!!";
+	}
+}
+
 int main()
 {
 	/*
@@ -111,6 +152,11 @@ int main()
     std::cout << "Hello World!\n";
 	*/
 	//record windows .
+
+	//std::this_thread::sleep_for(std::chrono::seconds(10));
+	int nums = getchar() - '0';
+	
+	::SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)unexpectCrashFunction);
 
 	using RLOG = RL::RecordCapture::IRecordLog;
 	std::shared_ptr<RL::RecordCapture::IRecordLog> logInstance = RL::RecordCapture::CreateRecordLog([]() {
@@ -198,9 +244,16 @@ int main()
 	})
 		->start_capturing();
 	
+	//mix speaker and microphone audio buffer.
+	std::unique_ptr<CicleBuffer> mixAudioBuffer = std::make_unique<CicleBuffer>(48000 * 2 * 2, 0);
+	mixAudioBuffer->flushBuffer();
+
 	std::atomic<int> realcounterAudio = 0;
 	auto onAudioFrameStart = std::chrono::high_resolution_clock::now();
 	std::unique_ptr<unsigned char[]> outAudioBuffer = nullptr;
+	unsigned int readBufferLen = 0;
+	std::unique_ptr<unsigned char[]> outAudioBufferTemp = std::make_unique<unsigned char[]>(0x800000);
+	memset(outAudioBufferTemp.get(), 0, 0x800000);
 
 	std::shared_ptr<RL::RecordCapture::IScreenCaptureManager> speakergrabber =
 		RL::RecordCapture::CreateCaptureConfiguration([&]() {
@@ -208,9 +261,11 @@ int main()
 		return speakers;
 	})->onAudioFrame([&](const RL::RecordCapture::AudioFrame &audioFrame) {
 		//cout<<audioFrame.renderTimeMs<<" onAudioFrame."<<std::endl;
+		realcounterAudio.fetch_add(1);
 		int len = audioFrame.samples * audioFrame.channels * audioFrame.bytesPerSample;
 		if (outAudioBuffer == nullptr) {
 			outAudioBuffer = std::make_unique<unsigned char []>(len / 2);
+			memset(outAudioBuffer.get(), 0,len / 2);
 		}
 		
 		for (int i = 0; i < len /4; i ++ ) {
@@ -218,6 +273,13 @@ int main()
 			short ss = ff * 32768;
 			memcpy(outAudioBuffer.get() + i * 2, &ss,2);
 		}
+
+#ifdef ADD_MIC
+		if (mixAudioBuffer->readBuffer(outAudioBufferTemp.get(), len / 2, &readBufferLen));
+		int nMixLen = len / 2 > readBufferLen ? readBufferLen : len / 2;
+		MixerAddS16((int16_t*)outAudioBuffer.get(),(int16_t*)outAudioBufferTemp.get(), nMixLen / sizeof(int16_t));
+#endif
+
 		//src_float_to_short_array((float*)audioFrame.buffer, (short*)outAudioBuffer.get(), len / sizeof(float));
  		if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - onAudioFrameStart).count() > 10 * 1000) {
 			auto fpsaudio = realcounterAudio * 1.0 / 10;
@@ -252,9 +314,11 @@ int main()
 		return microphones;
 	})->onAudioFrame([&](const RL::RecordCapture::AudioFrame &audioFrame) {
 		//cout<<audioFrame.renderTimeMs<<" onAudioFrame."<<std::endl;
+		realcounterMic.fetch_add(1);
 		int len = audioFrame.samples * audioFrame.channels * audioFrame.bytesPerSample;
 		if (outMicAudioBuffer == nullptr) {
 			outMicAudioBuffer = std::make_unique<unsigned char[]>(len / 2);
+			memset(outMicAudioBuffer.get(), 0, len / 2);
 		}
 
 		for (int i = 0; i < len / 4; i++) {
@@ -278,13 +342,16 @@ int main()
 			winMicAudioFrame.frameSize = len / 2;
 			winMicAudioFrame.pts = audioFrame.renderTimeMs;
 #ifdef RECORD
-			winMediaStreamer->inputAudioFrame(&winMicAudioFrame);
+			//winMediaStreamer->inputAudioFrame(&winMicAudioFrame);
+#ifdef ADD_MIC
+			mixAudioBuffer->writeBuffer((void*)outMicAudioBuffer.get(), len / 2);
+#endif
 #endif
 		}
 	})->start_capturing();
 	
 	int i = 0;
-	while (++i < 4) {
+	while (++i < 10 * nums) {
 		logInstance->rlog(RLOG::LOG_DEBUG, "Sleep 2 seconds");
 		std::this_thread::sleep_for(std::chrono::seconds(2));
 	}

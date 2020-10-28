@@ -36,6 +36,7 @@
 
 #define  RECORD
 #define  ADD_MIC
+#define  DEVMODE
 
 using namespace std;
 
@@ -223,7 +224,9 @@ int main()
 		if (nullptr == pRecordFile)
 			fopen_s(&pRecordFile,"app.raw","wb");
 		int nBufferLen = 4 * Width(window) * Height(window);
+#ifdef DEVMODE
 		fwrite((void*)img.Data,nBufferLen, 1, pRecordFile);
+#endif
 		WinVideoFrame winVideoFrame;
 		winVideoFrame.data = (uint8_t *)img.Data;
 		winVideoFrame.frameSize = nBufferLen;
@@ -291,7 +294,9 @@ int main()
 		if (nullptr == pOutPutFile)
 			pOutPutFile = fopen("speaker.pcm", "wb");
 		if (audioFrame.buffer) {
+#ifdef DEVMODE			
 			fwrite(outAudioBuffer.get(), len/2, 1, pOutPutFile);
+#endif
 			//fwrite(audioFrame.buffer,len,1,pOutPutFile);
 			WinAudioFrame winAudioFrame;
 			winAudioFrame.data = outAudioBuffer.get();
@@ -336,7 +341,9 @@ int main()
 		if (nullptr == pOutPutFile)
 			pOutPutFile = fopen("microphone.pcm", "wb");
 		if (audioFrame.buffer) {
+#ifdef DEVMODE
 			fwrite(outMicAudioBuffer.get(), len / 2, 1, pOutPutFile);
+#endif
 			WinAudioFrame winMicAudioFrame;
 			winMicAudioFrame.data = outMicAudioBuffer.get();
 			winMicAudioFrame.frameSize = len / 2;
@@ -351,7 +358,7 @@ int main()
 	})->start_capturing();
 	
 	int i = 0;
-	while (++i < 10 * nums) {
+	while (++i < 5 * nums) {
 		logInstance->rlog(RLOG::LOG_DEBUG, "Sleep 2 seconds");
 		std::this_thread::sleep_for(std::chrono::seconds(2));
 	}

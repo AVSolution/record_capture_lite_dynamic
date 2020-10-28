@@ -1,13 +1,11 @@
 {
   "configurations": [
     {
-      "name": "record.sln:f:/workspace/record/recordcapture/recordcapture.vcxproj",
+      "name": "record.sln:f:/workspace/record/record_test/record_test.vcxproj",
       "includePath": [],
       "defines": [
         "_DEBUG",
-        "RECORDCAPTURE_EXPORTS",
-        "_WINDOWS",
-        "_USRDLL",
+        "_CONSOLE",
         ""
       ],
       "cStandard": "c99",

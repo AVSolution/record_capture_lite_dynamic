@@ -198,6 +198,8 @@ int main()
 		videoOptions.videoHeight =  nHeight;
 		videoOptions.videoFps = 10;
 		videoOptions.videoBitRate = 1024;
+		videoOptions.encodeMode = 0; //vbr ¶¯Ì¬ÂëÂÊ
+		videoOptions.videoProfile = 2; // high profile
 		WinAudioOptions audioOptions;
 		audioOptions.audioBitRate = 128;
 		audioOptions.audioSampleRate = 48000;

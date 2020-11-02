@@ -280,9 +280,10 @@ int main()
 		}
 
 #ifdef ADD_MIC
-		if (mixAudioBuffer->readBuffer(outAudioBufferTemp.get(), len / 2, &readBufferLen));
-		int nMixLen = len / 2 > readBufferLen ? readBufferLen : len / 2;
-		MixerAddS16((int16_t*)outAudioBuffer.get(),(int16_t*)outAudioBufferTemp.get(), nMixLen / sizeof(int16_t));
+		if (mixAudioBuffer->readBuffer(outAudioBufferTemp.get(), len / 2, &readBufferLen)) {
+			int nMixLen = len / 2 > readBufferLen ? readBufferLen : len / 2;
+			MixerAddS16((int16_t*)outAudioBuffer.get(), (int16_t*)outAudioBufferTemp.get(), nMixLen / sizeof(int16_t));
+		}
 #endif
 
 		//src_float_to_short_array((float*)audioFrame.buffer, (short*)outAudioBuffer.get(), len / sizeof(float));

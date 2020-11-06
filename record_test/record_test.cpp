@@ -268,20 +268,29 @@ int main()
 		//cout<<audioFrame.renderTimeMs<<" onAudioFrame."<<std::endl;
 		realcounterAudio.fetch_add(1);
 		int len = audioFrame.samples * audioFrame.channels * audioFrame.bytesPerSample;
+		int len_s16 = len / 2;
+		if (audioFrame.bytesPerSample == 2) {
+			len_s16 = len;
+		}
 		if (outAudioBuffer == nullptr) {
-			outAudioBuffer = std::make_unique<unsigned char []>(len / 2);
-			memset(outAudioBuffer.get(), 0,len / 2);
+			outAudioBuffer = std::make_unique<unsigned char []>(len_s16);
+			memset(outAudioBuffer.get(), 0,len / 2);//save 16bit pcm source audio buffer.
 		}
 		
-		for (int i = 0; i < len /4; i ++ ) {
-			float ff = *(float*)((uint8_t*)audioFrame.buffer + i * 4);
-			short ss = ff * 32768;
-			memcpy(outAudioBuffer.get() + i * 2, &ss,2);
+		if (audioFrame.bytesPerSample == 4) {
+			for (int i = 0; i < len / 4; i++) {//32 float
+				float ff = *(float*)((uint8_t*)audioFrame.buffer + i * 4);
+				short ss = ff * 32768;
+				memcpy(outAudioBuffer.get() + i * 2, &ss, 2);
+			}
+		}
+		else if (audioFrame.bytesPerSample == 2) {//16 bit
+			memcpy(outAudioBuffer.get(),audioFrame.buffer,len_s16);
 		}
 
 #ifdef ADD_MIC
-		if (mixAudioBuffer->readBuffer(outAudioBufferTemp.get(), len / 2, &readBufferLen)) {
-			int nMixLen = len / 2 > readBufferLen ? readBufferLen : len / 2;
+		if (mixAudioBuffer->readBuffer(outAudioBufferTemp.get(), len_s16, &readBufferLen)) {
+			int nMixLen = len / 2 > readBufferLen ? readBufferLen : len_s16;
 			MixerAddS16((int16_t*)outAudioBuffer.get(), (int16_t*)outAudioBufferTemp.get(), nMixLen / sizeof(int16_t));
 		}
 #endif
@@ -298,12 +307,12 @@ int main()
 			pOutPutFile = fopen("speaker.pcm", "wb");
 		if (audioFrame.buffer) {
 #ifdef DEVMODE			
-			fwrite(outAudioBuffer.get(), len/2, 1, pOutPutFile);
+			fwrite(outAudioBuffer.get(), len_s16, 1, pOutPutFile);
 #endif
 			//fwrite(audioFrame.buffer,len,1,pOutPutFile);
 			WinAudioFrame winAudioFrame;
 			winAudioFrame.data = outAudioBuffer.get();
-			winAudioFrame.frameSize = len / 2;
+			winAudioFrame.frameSize = len_s16;
 			winAudioFrame.pts = audioFrame.renderTimeMs;
 #ifdef RECORD
 			winMediaStreamer->inputAudioFrame(&winAudioFrame);
@@ -313,6 +322,7 @@ int main()
 	})
 		->start_capturing();
 	
+	/*
 	std::atomic<int> realcounterMic = 0;
 	auto onMicFrameStart = std::chrono::high_resolution_clock::now();
 	std::unique_ptr<unsigned char[]> outMicAudioBuffer = nullptr;
@@ -359,6 +369,7 @@ int main()
 #endif
 		}
 	})->start_capturing();
+	*/
 	
 	int i = 0;
 	while (++i < 5 * nums) {
@@ -367,7 +378,7 @@ int main()
 	}
 	
 	speakergrabber->pause();
-	micgrabber->pause();
+	//micgrabber->pause();
 	framegrabber->pause();
 	std::this_thread::sleep_for(std::chrono::seconds(1));
 

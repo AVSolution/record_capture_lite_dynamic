@@ -54,6 +54,9 @@ namespace RL {
 			if (FAILED(hr))
 				return DUPL_RETURN_ERROR_EXPECTED;
 
+			//fix waveformat param.
+			initFormat();
+
 			LogInstance()->rlog(IRecordLog::LOG_INFO, 
 				"default audio device speaker SamplerPerSec: %d, nChannel: %d, BitPerSample: %d",
 				wfex->nSamplesPerSec,wfex->nChannels,wfex->wBitsPerSample);
@@ -74,6 +77,30 @@ namespace RL {
 			client->Start();
 
 			return DUPL_RETURN::DUPL_RETURN_SUCCESS;
+		}
+
+		void WSAAPISource::initFormat()
+		{
+			switch (wfex->wFormatTag)
+			{
+			case WAVE_FORMAT_IEEE_FLOAT: {
+				wfex->wFormatTag = WAVE_FORMAT_PCM;
+				wfex->wBitsPerSample = 16;
+				wfex->nBlockAlign = wfex->wBitsPerSample / 8 * wfex->nChannels;
+				wfex->nAvgBytesPerSec = wfex->nSamplesPerSec * wfex->nBlockAlign;
+			}break;
+			case WAVE_FORMAT_EXTENSIBLE: {
+				PWAVEFORMATEXTENSIBLE pEx = (PWAVEFORMATEXTENSIBLE)(wfex.Get());
+				if (IsEqualGUID(KSDATAFORMAT_SUBTYPE_IEEE_FLOAT, pEx->SubFormat)) {
+					pEx->SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
+					pEx->Samples.wValidBitsPerSample = 16;
+					wfex->wBitsPerSample = 16;
+					wfex->nBlockAlign = wfex->wBitsPerSample / 8 * wfex->nChannels;
+					wfex->nAvgBytesPerSec = wfex->nSamplesPerSec * wfex->nBlockAlign;
+				}
+			}break;
+			default:break;
+			}
 		}
 
 		DUPL_RETURN WSAAPISource::ProcessFrame(const Speaker& currentSpeaker) {

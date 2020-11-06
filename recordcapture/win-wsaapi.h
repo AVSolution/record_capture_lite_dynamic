@@ -31,6 +31,7 @@ namespace RL {
 			
 			void Pause();
 			void Resume();
+			void initFormat();
 			DUPL_RETURN Init(std::shared_ptr<Thread_Data> data, const Speaker& speaker);
 			DUPL_RETURN ProcessFrame(const Speaker& currentSpeaker);
 			DUPL_RETURN Init(std::shared_ptr<Thread_Data> data, const Microphone& microphone);

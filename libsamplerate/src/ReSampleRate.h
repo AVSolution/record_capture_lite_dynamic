@@ -40,7 +40,18 @@ namespace RL {
 			~ReSampleRateEx();
 
 			void initialization(int nSampleRateSrc, int nSampleRateDest, int nChannel);
+
+			/* @param 标准10ms sample (deprecated)
+			   @samper_channel_channel 一定为smaplerateIn / 100; 表示单通道的样点数.
+			 */
+			//constant buffer length and samples per channel.  must be bufferLenIn = nSampleRateSrc / 100 * sizeof(int16_t) * nChannsl
 			void resample_process(char* bufferIn, int bufferLenIn, int sample_per_channel,char* bufferOut, int &outLen);
+
+			/* @param 支持任意samper_per_channel(recommend)
+			   @samper_channel_channel 使用过程中是固定的.表示单通道的样点数.
+			 */
+			//constant buffer length and samples per channel.
+			void resample_process_fixed(char* bufferIn, int bufferLenIn, int sample_per_channel, char* bufferOut, int &outLen);
 
 		private:
 			int m_nChannel;
@@ -60,8 +71,13 @@ namespace RL {
 			ReSampleRate();
 			~ReSampleRate();
 
-			void initialization(int nSamplePerSrc, int nSamplePerDest,int nChannel);
+			void initialization(int nSamplePerSrc, int nSamplePerDest, int nChannel);
+
+			//constant buffer length and samples per channel.  must be bufferLenIn = nSampleRateSrc / 100 * sizeof(int16_t) * nChannsl
 			void resample_process(char* bufferIn, int bufferLenIn, char* bufferOut, int &outLen);
+
+			//constant buffer length and samples per channel.
+			void resample_process_fixed(char* bufferIn,int bufferLenIn,int sample_per_channel,char* bufferOut,int &outLen);
 
 		private:
 

@@ -32,11 +32,12 @@ int main()
 	int nRead_Buffer = sampleIn / 100 * 2 * nChannel;//the length to read from source pcm file.
 	int nConvert_Buffer = samleout / 100 * 2 * nChannel;
 
-	std::unique_ptr<char[]> pReadBuffer = std::make_unique<char[]>(nRead_Buffer);
-	memset(pReadBuffer.get(), 0, nRead_Buffer);
+	int bufferLen_max = 4096;
+	std::unique_ptr<char[]> pReadBuffer = std::make_unique<char[]>(bufferLen_max);
+	memset(pReadBuffer.get(), 0, bufferLen_max);
 
-	std::unique_ptr<char[]> pConvertBuffer = std::make_unique<char[]>(nConvert_Buffer);
-	memset(pConvertBuffer.get(), 0, nConvert_Buffer);
+	std::unique_ptr<char[]> pConvertBuffer = std::make_unique<char[]>(bufferLen_max);
+	memset(pConvertBuffer.get(), 0, bufferLen_max);
 
 	FILE* fPcmSrc = fopen("44100_1_16.pcm", "rb+");
 	if (nullptr == fPcmSrc) {
@@ -47,9 +48,9 @@ int main()
 #ifdef SAMPLERATE
 	//initialization the samplerate param list.
 	RL::RecordCapture::ReSampleRate samplerate;
-	samplerate.initialization(48000, 44100, nChannel);
+	samplerate.initialization(sampleIn, samleout, nChannel);
 
-	FILE* fPcmDst = fopen("speaker_samplerate_convert.pcm", "wb+");
+	FILE* fPcmDst = fopen("speaker_samplerate_convert_1.pcm", "wb+");
 	if (nullptr == fPcmDst) {
 		std::cout << "" << std::endl;
 		return -1;
@@ -57,24 +58,26 @@ int main()
 
 	int nFrame = 0;
 	getchar();
-	while ((fread(pReadBuffer.get(), nRead_Buffer, 1, fPcmSrc) != 0)) {
+	while ((fread(pReadBuffer.get(), nRead_Buffer , 1, fPcmSrc) != 0)) {
 		if (nFrame % 10 == 0)
 			printf("processing the %d frame \n", nFrame);
 		nFrame++;
 
-		memset(pConvertBuffer.get(), 0, nConvert_Buffer);
+		memset(pConvertBuffer.get(), 0, 2048);
 		int outLen = 0;
-		samplerate.resample_process(pReadBuffer.get(), nRead_Buffer, pConvertBuffer.get(),outLen);
+		samplerate.resample_process_fixed(pReadBuffer.get(), nRead_Buffer ,nRead_Buffer / sizeof(int16_t)/nChannel, pConvertBuffer.get(),outLen);
 		if (outLen) {
 			fwrite(pConvertBuffer.get(), outLen, 1, fPcmDst);
 			fflush(fPcmDst);
 		}
-		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+		//nRead_Buffer += sizeof(int16_t) * nChannel * 2 * 2;
+		//if (nRead_Buffer > 2048)
+		//	nRead_Buffer = 480 * 2 * 2;
+		//std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 #endif
 
 #ifdef SAMPLERATEX
-	std::cout << sizeof(int16_t) << std::endl;
 	int nFrame = 0;
 	getchar();
 
@@ -95,16 +98,17 @@ int main()
 	//	return -1;
 	//}
 
-	FILE* fPcmDst = fopen("speaker_samplerateex_convert.pcm", "wb+");
+	FILE* fPcmDst = fopen("speaker_samplerateex_convert_1.pcm", "wb+");
 	if (nullptr == fPcmDst) {
 		std::cout << "" << std::endl;
 		return -1;
 	}
-
+/*
 	std::unique_ptr<char[]> left_src = std::make_unique<char[]>(nRead_Buffer / 2);
 	std::unique_ptr<char[]> right_src = std::make_unique<char[]>(nRead_Buffer / 2);
-	std::unique_ptr<int16_t[]> right_src_1 = std::make_unique<int16_t[]>(nRead_Buffer / 2 / 2);
+	std::unique_ptr<int16_t[]> right_src_1 = std::make_unique<int16_t[]>(nRead_Buffer / 2 / 2);*/
 
+	nRead_Buffer *= 2;
 	RL::RecordCapture::ReSampleRateEx sampleEx;
 	sampleEx.initialization(sampleIn, samleout, nChannel);
 	while ((fread(pReadBuffer.get(), nRead_Buffer, 1, fPcmSrc) != 0)) {
@@ -113,7 +117,7 @@ int main()
 		nFrame++;
 		
 		int outLen = 0;
-		sampleEx.resample_process(pReadBuffer.get(), nRead_Buffer, sampleIn / 100, pConvertBuffer.get(), outLen);
+		sampleEx.resample_process_fixed(pReadBuffer.get(), nRead_Buffer, nRead_Buffer / sizeof(int16_t) / nChannel, pConvertBuffer.get(), outLen);
 		if (outLen) {
 			fwrite(pConvertBuffer.get(), outLen, 1, fPcmDst);
 			fflush(fPcmDst);

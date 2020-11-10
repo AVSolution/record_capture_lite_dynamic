@@ -26,8 +26,8 @@
 
 int main()
 {
-	int sampleIn = 44100;
-	int samleout = 16000;
+	int sampleIn = 16000;
+	int samleout = 44100;
 	int nChannel = 1;
 	int nRead_Buffer = sampleIn / 100 * 2 * nChannel;//the length to read from source pcm file.
 	int nConvert_Buffer = samleout / 100 * 2 * nChannel;
@@ -36,10 +36,10 @@ int main()
 	std::unique_ptr<char[]> pReadBuffer = std::make_unique<char[]>(bufferLen_max);
 	memset(pReadBuffer.get(), 0, bufferLen_max);
 
-	std::unique_ptr<char[]> pConvertBuffer = std::make_unique<char[]>(bufferLen_max);
+	std::unique_ptr<unsigned char[]> pConvertBuffer = std::make_unique<unsigned char[]>(bufferLen_max);
 	memset(pConvertBuffer.get(), 0, bufferLen_max);
 
-	FILE* fPcmSrc = fopen("44100_1_16.pcm", "rb+");
+	FILE* fPcmSrc = fopen("16000_1_16.pcm", "rb+");
 	if (nullptr == fPcmSrc) {
 		std::cout << "" << std::endl;
 		return -1;

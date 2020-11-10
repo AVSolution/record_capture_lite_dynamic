@@ -56,33 +56,6 @@ namespace RL {
 			}
 		}
 
-		int16_t  MixerAddS16(int16_t var1, int16_t var2)
-		{
-			static const int32_t kMaxInt16 = 32767;
-			static const int32_t kMinInt16 = -32768;
-			int32_t tmp = (int32_t)var1 + (int32_t)var2;
-			int16_t out16;
-
-			if (tmp > kMaxInt16) {
-				out16 = kMaxInt16;
-			}
-			else if (tmp < kMinInt16) {
-				out16 = kMinInt16;
-			}
-			else {
-				out16 = (int16_t)tmp;
-			}
-
-			return out16;
-		}
-
-		void MixerAddS16(int16_t* src1, const int16_t* src2, size_t size)
-		{
-			for (size_t i = 0; i < size; ++i) {
-				src1[i] = MixerAddS16(src1[i], src2[i]);
-			}
-		}
-
 		//class ResampleRateEx
 		ReSampleRateEx::ReSampleRateEx()
 		{
@@ -147,7 +120,7 @@ namespace RL {
 			}
 		}
 
-		void ReSampleRateEx::resample_process_fixed(char* bufferIn, int bufferLenIn, int sample_per_channel, char* bufferOut, int &outLen)
+		void ReSampleRateEx::resample_process_fixed(char* bufferIn, int bufferLenIn, int sample_per_channel, unsigned char* bufferOut, int &outLen)
 		{
 			if (pReSampleRate == nullptr)
 				pReSampleRate = std::make_unique<ReSampleRate[]>(m_nChannel);
@@ -185,13 +158,27 @@ namespace RL {
 				int outLen1 = 0;
 
 				get_stereo_left((int16_t*)bufferIn, sample_per_channel, buffer_left_src.get());
-				pReSampleRate[0].resample_process_fixed((char*)buffer_left_src.get(), bufferLenIn / 2,sample_per_channel, (char*)buffer_left_convert.get(), outLen1);
+				pReSampleRate[0].resample_process_fixed((char*)buffer_left_src.get(), bufferLenIn / 2,sample_per_channel, (unsigned char*)buffer_left_convert.get(), outLen1);
+
+				//static FILE* fLeft = nullptr;
+				//if (fLeft == nullptr) {
+				//	fLeft = fopen("left_src.pcm", "wb+");
+				//}
+				//fwrite(buffer_left_src.get(), sample_per_channel * 2, 1, fLeft);
 
 				get_stereo_right((int16_t*)bufferIn, sample_per_channel, buffer_right_src.get());
-				pReSampleRate[1].resample_process_fixed((char*)buffer_right_src.get(), bufferLenIn / 2, sample_per_channel, (char*)buffer_right_convert.get(), outLen1);
+				pReSampleRate[1].resample_process_fixed((char*)buffer_right_src.get(), bufferLenIn / 2, sample_per_channel, (unsigned char*)buffer_right_convert.get(), outLen1);
 
-				combine_2_stereo(buffer_left_convert.get(), buffer_right_convert.get(), sample_per_channel, (int16_t*)bufferOut);
+				//static FILE* fRight = nullptr;
+				//if (fRight == nullptr) {
+				//	fRight = fopen("right_src.pcm", "wb+");
+				//}
+				//fwrite(buffer_right_src.get(), sample_per_channel * 2, 1, fRight);
+
+				combine_2_stereo2(buffer_left_convert.get(), buffer_right_convert.get(), outLen1 / 2, (int16_t*)bufferOut);
+				
 				outLen = outLen1 * 2;
+				//outLen = 0;
 			}
 		}
 
@@ -273,7 +260,7 @@ namespace RL {
 			}
 		}
 
-		void ReSampleRate::resample_process_fixed(char* bufferIn, int bufferLenIn, int sample_per_channel, char* bufferOut, int &outLen)
+		void ReSampleRate::resample_process_fixed(char* bufferIn, int bufferLenIn, int sample_per_channel, unsigned char* bufferOut, int &outLen)
 		{
 			//(bufferLenIn == sample_per_channel * sizeof(16) * m_nChannel); forever true.
 
@@ -292,8 +279,10 @@ namespace RL {
 			m_DataResample.input_frames = sample_per_channel * 2;
 			m_DataResample.data_out = m_out;
 			m_DataResample.src_ratio = 1.0 * m_nSampleOut / m_nSampleIn;
-			m_DataResample.output_frames = sample_per_channel * 2;
+			m_DataResample.output_frames = sample_per_channel * 2 * m_nSampleOut / m_nSampleIn;
 
+			int nCountSample = 0;
+			outLen = 0;
 			while (true) {
 				src_reset(m_DataState);
 				int ret = src_process(m_DataState, std::addressof(m_DataResample));
@@ -302,10 +291,10 @@ namespace RL {
 					int i = 0; int j = 0;
 					for (; i < 4096 && i < buf_sizePCM && j < buf_sizePCM; i++, j++)
 					{
-						bufferOut[j] = (unsigned char)(m_out[i]);
+						bufferOut[j + nCountSample] = (unsigned char)(m_out[i]);
 					}
 					buf_sizePCM = buf_sizePCM;
-					outLen = buf_sizePCM;
+					outLen += buf_sizePCM;
 
 					printf("-------- output_frames_gen[%d], in_used_frame[%d] end_of_input[%d] src_ratio[%f]------ \n",
 						m_DataResample.output_frames_gen, m_DataResample.input_frames_used,
@@ -318,11 +307,12 @@ namespace RL {
 					break;
 				}
 
-				if (m_DataResample.input_frames_used == m_DataResample.input_frames) {
+				if (m_DataResample.input_frames_used == m_DataResample.input_frames ||
+					m_DataResample.output_frames_gen == m_DataResample.output_frames) {
 					m_DataResample.end_of_input = 1;
 					break;
 				}
-
+				nCountSample += m_DataResample.input_frames_used;
 				m_DataResample.data_in += m_DataResample.input_frames_used;
 				m_DataResample.input_frames -= m_DataResample.input_frames_used;
 				m_DataResample.end_of_input = 0;

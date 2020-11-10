@@ -29,9 +29,6 @@ namespace RL {
 		void get_stereo_right(const int16_t* src_audio,
 			int samples_per_channel, int16_t* dst_audio);
 
-		// mix 2 stero.
-		static void MixerAddS16(int16_t* src1, const int16_t* src2, size_t size);
-
 		class ReSampleRate;
 		class ReSampleRateEx
 		{
@@ -51,7 +48,7 @@ namespace RL {
 			   @samper_channel_channel 使用过程中是固定的.表示单通道的样点数.
 			 */
 			//constant buffer length and samples per channel.
-			void resample_process_fixed(char* bufferIn, int bufferLenIn, int sample_per_channel, char* bufferOut, int &outLen);
+			void resample_process_fixed(char* bufferIn, int bufferLenIn, int sample_per_channel, unsigned char* bufferOut, int &outLen);
 
 		private:
 			int m_nChannel;
@@ -77,7 +74,7 @@ namespace RL {
 			void resample_process(char* bufferIn, int bufferLenIn, char* bufferOut, int &outLen);
 
 			//constant buffer length and samples per channel.
-			void resample_process_fixed(char* bufferIn,int bufferLenIn,int sample_per_channel,char* bufferOut,int &outLen);
+			void resample_process_fixed(char* bufferIn,int bufferLenIn,int sample_per_channel,unsigned char* bufferOut,int &outLen);
 
 		private:
 

@@ -6,6 +6,7 @@
 #include "../MediaStream/include/IWinMediaStreamer.h"
 #include "../MediaStream/include/AudioSampleFormatConvert.h"
 #include "CicleBuffer.h"
+#include "audioUtil.h"
 #include <DbgHelp.h>
 #pragma comment(lib,"Dbghelp.lib")
 #ifdef _DEBUG
@@ -37,6 +38,8 @@
 #define  RECORD
 #define  ADD_MIC
 #define  DEVMODE
+#define MIC_MODULE
+#define SPEAKER_MODULE
 
 using namespace std;
 
@@ -95,6 +98,7 @@ int SimpleCalculate_DB(short* pcmData, int sample)
 	return ret;
 }
 
+/*
 int16_t  MixerAddS16(int16_t var1, int16_t var2)
 {
 	static const int32_t kMaxInt16 = 32767;
@@ -121,6 +125,13 @@ void MixerAddS16(int16_t* src1, const int16_t* src2, size_t size)
 		src1[i] = MixerAddS16(src1[i], src2[i]);
 	}
 }
+
+//for (int i = 0; i < len / 4; i++) {
+//	float ff = *(float*)((uint8_t*)audioFrame.buffer + i * 4);
+//	short ss = ff * 32768;
+//	memcpy(outMicAudioBuffer.get() + i * 2, &ss, 2);
+//}
+*/
 
 static void unexpectCrashFunction(_EXCEPTION_POINTERS* excptr) 
 {
@@ -248,10 +259,12 @@ int main()
 		//std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count()<<" onNewFrame. width: " <<Width(window)<<" height: "<<Height(window)<< std::endl;
 	})
 		->start_capturing();
-	
+
 	//mix speaker and microphone audio buffer.
 	std::unique_ptr<CicleBuffer> mixAudioBuffer = std::make_unique<CicleBuffer>(48000 * 2 * 2, 0);
 	mixAudioBuffer->flushBuffer();
+
+#ifdef SPEAKER_MODULE
 
 	std::atomic<int> realcounterAudio = 0;
 	auto onAudioFrameStart = std::chrono::high_resolution_clock::now();
@@ -274,15 +287,11 @@ int main()
 		}
 		if (outAudioBuffer == nullptr) {
 			outAudioBuffer = std::make_unique<unsigned char []>(len_s16);
-			memset(outAudioBuffer.get(), 0,len / 2);//save 16bit pcm source audio buffer.
+			memset(outAudioBuffer.get(), 0, len_s16);//save 16bit pcm source audio buffer.
 		}
 		
 		if (audioFrame.bytesPerSample == 4) {
-			for (int i = 0; i < len / 4; i++) {//32 float
-				float ff = *(float*)((uint8_t*)audioFrame.buffer + i * 4);
-				short ss = ff * 32768;
-				memcpy(outAudioBuffer.get() + i * 2, &ss, 2);
-			}
+			RL::Util::convert32fToS16((int32_t*)audioFrame.buffer, len / sizeof(int32_t), (int16_t*)outAudioBuffer.get());
 		}
 		else if (audioFrame.bytesPerSample == 2) {//16 bit
 			memcpy(outAudioBuffer.get(),audioFrame.buffer,len_s16);
@@ -291,11 +300,9 @@ int main()
 #ifdef ADD_MIC
 		if (mixAudioBuffer->readBuffer(outAudioBufferTemp.get(), len_s16, &readBufferLen)) {
 			int nMixLen = len / 2 > readBufferLen ? readBufferLen : len_s16;
-			MixerAddS16((int16_t*)outAudioBuffer.get(), (int16_t*)outAudioBufferTemp.get(), nMixLen / sizeof(int16_t));
+			RL::Util::MixerAddS16((int16_t*)outAudioBuffer.get(), (int16_t*)outAudioBufferTemp.get(), nMixLen / sizeof(int16_t));
 		}
 #endif
-
-		//src_float_to_short_array((float*)audioFrame.buffer, (short*)outAudioBuffer.get(), len / sizeof(float));
  		if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - onAudioFrameStart).count() > 10 * 1000) {
 			auto fpsaudio = realcounterAudio * 1.0 / 10;
 			realcounterAudio = 0;
@@ -321,8 +328,9 @@ int main()
 		}
 	})
 		->start_capturing();
+#endif
 	
-	/*
+#ifdef MIC_MODULE
 	std::atomic<int> realcounterMic = 0;
 	auto onMicFrameStart = std::chrono::high_resolution_clock::now();
 	std::unique_ptr<unsigned char[]> outMicAudioBuffer = nullptr;
@@ -334,16 +342,20 @@ int main()
 		//cout<<audioFrame.renderTimeMs<<" onAudioFrame."<<std::endl;
 		realcounterMic.fetch_add(1);
 		int len = audioFrame.samples * audioFrame.channels * audioFrame.bytesPerSample;
+		int len_s16 = len / 2;
+		if (audioFrame.bytesPerSample == 2) {
+			len_s16 = len;
+		}
 		if (outMicAudioBuffer == nullptr) {
-			outMicAudioBuffer = std::make_unique<unsigned char[]>(len / 2);
-			memset(outMicAudioBuffer.get(), 0, len / 2);
+			outMicAudioBuffer = std::make_unique<unsigned char[]>(len_s16);
+			memset(outMicAudioBuffer.get(), 0, len_s16);
 		}
 
-		for (int i = 0; i < len / 4; i++) {
-			float ff = *(float*)((uint8_t*)audioFrame.buffer + i * 4);
-			short ss = ff * 32768;
-			memcpy(outMicAudioBuffer.get() + i * 2, &ss, 2);
-		}
+		if (audioFrame.bytesPerSample == 4)
+			RL::Util::convert32fToS16((int32_t*)audioFrame.buffer, len / sizeof(int32_t), (int16_t*)outMicAudioBuffer.get());
+		else if (audioFrame.bytesPerSample == 2)
+			memcpy(outMicAudioBuffer.get(), audioFrame.buffer, len_s16);
+
 		if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - onMicFrameStart).count() > 10 * 1000) {
 			auto fpsaudio = realcounterMic * 1.0 / 10;
 			realcounterMic = 0;
@@ -355,21 +367,19 @@ int main()
 			pOutPutFile = fopen("microphone.pcm", "wb");
 		if (audioFrame.buffer) {
 #ifdef DEVMODE
-			fwrite(outMicAudioBuffer.get(), len / 2, 1, pOutPutFile);
+			fwrite(outMicAudioBuffer.get(), len_s16, 1, pOutPutFile);
 #endif
 			WinAudioFrame winMicAudioFrame;
 			winMicAudioFrame.data = outMicAudioBuffer.get();
-			winMicAudioFrame.frameSize = len / 2;
+			winMicAudioFrame.frameSize = len_s16;
 			winMicAudioFrame.pts = audioFrame.renderTimeMs;
-#ifdef RECORD
 			//winMediaStreamer->inputAudioFrame(&winMicAudioFrame);
 #ifdef ADD_MIC
-			mixAudioBuffer->writeBuffer((void*)outMicAudioBuffer.get(), len / 2);
-#endif
+			mixAudioBuffer->writeBuffer((void*)outMicAudioBuffer.get(), len_s16);
 #endif
 		}
 	})->start_capturing();
-	*/
+#endif
 	
 	int i = 0;
 	while (++i < 5 * nums) {
@@ -377,8 +387,12 @@ int main()
 		std::this_thread::sleep_for(std::chrono::seconds(2));
 	}
 	
+#ifdef SPEAKER_MODULE
 	speakergrabber->pause();
-	//micgrabber->pause();
+#endif
+#ifdef MIC_MODULE
+	micgrabber->pause();
+#endif
 	framegrabber->pause();
 	std::this_thread::sleep_for(std::chrono::seconds(1));
 

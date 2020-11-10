@@ -156,11 +156,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="audioUtil.cpp" />
     <ClCompile Include="lodepng.cpp" />
     <ClCompile Include="record_test.cpp" />
     <ClCompile Include="CicleBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="audioUtil.h" />
     <ClInclude Include="lodepng.h" />
     <ClInclude Include="tiny_jpeg.h" />
     <ClInclude Include="CicleBuffer.h" />

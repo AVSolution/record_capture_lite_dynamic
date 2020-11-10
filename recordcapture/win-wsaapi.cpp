@@ -54,7 +54,6 @@ namespace RL {
 			if (FAILED(hr))
 				return DUPL_RETURN_ERROR_EXPECTED;
 
-			//fix waveformat param.
 			initFormat();
 
 			LogInstance()->rlog(IRecordLog::LOG_INFO, 
@@ -170,6 +169,8 @@ namespace RL {
 			hr = client->GetMixFormat(&wfex);
 			if (FAILED(hr))
 				return DUPL_RETURN_ERROR_EXPECTED;
+
+			initFormat();
 
 			LogInstance()->rlog(IRecordLog::LOG_INFO,
 				"default audio device microphone SamplerPerSec: %d, nChannel: %d, BitPerSample: %d",

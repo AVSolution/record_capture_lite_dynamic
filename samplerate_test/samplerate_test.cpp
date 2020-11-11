@@ -18,7 +18,8 @@
 #pragma comment(lib,"../my_speed_resampler/lib/libspeexdsp")
 
 //#define SAMPLERATE
-#define SAMPLERATEX
+//#define SAMPLERATEX
+#define SAMPLERATE_NEW
 //#define SPEED_SAMPLERATE
 //#define SPEED_SAMPLERATEEx
 //#define mian_test
@@ -26,7 +27,7 @@
 
 int main()
 {
-	int sampleIn = 16000;
+	int sampleIn = 48000;
 	int samleout = 44100;
 	int nChannel = 1;
 	int nRead_Buffer = sampleIn / 100 * 2 * nChannel;//the length to read from source pcm file.
@@ -39,7 +40,7 @@ int main()
 	std::unique_ptr<unsigned char[]> pConvertBuffer = std::make_unique<unsigned char[]>(bufferLen_max);
 	memset(pConvertBuffer.get(), 0, bufferLen_max);
 
-	FILE* fPcmSrc = fopen("16000_1_16.pcm", "rb+");
+	FILE* fPcmSrc = fopen("48000_1_16.pcm", "rb+");
 	if (nullptr == fPcmSrc) {
 		std::cout << "" << std::endl;
 		return -1;
@@ -184,6 +185,32 @@ int main()
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
 
+#endif
+
+#ifdef SAMPLERATE_NEW
+	int nFrame = 0;
+	getchar();
+	FILE* fPcmDst = fopen("speaker_samplerate_new_convert.pcm", "wb+");
+	if (nullptr == fPcmDst) {
+		std::cout << "" << std::endl;
+		return -1;
+	}
+
+	//nRead_Buffer *= 2;
+	RL::RecordCapture::ReSampleRateNew samplenew;
+	samplenew.initialization(sampleIn, samleout, nChannel);
+	while ((fread(pReadBuffer.get(), nRead_Buffer, 1, fPcmSrc) != 0)) {
+		if (nFrame % 10 == 0)
+			printf("processing the %d frame \n", nFrame);
+		nFrame++;
+
+		size_t outLen = 0;
+		samplenew.resample_process_fixed((int16_t*)pReadBuffer.get(), nRead_Buffer / sizeof(int16_t), nRead_Buffer / sizeof(int16_t) / nChannel, (int16_t*)pConvertBuffer.get(), outLen);
+		if (outLen) {
+			fwrite(pConvertBuffer.get(), outLen, sizeof(int16_t), fPcmDst);
+			fflush(fPcmDst);
+		}
+	}
 #endif
 
 #ifdef  SPEED_SAMPLERATEEx

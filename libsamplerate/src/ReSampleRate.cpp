@@ -319,5 +319,85 @@ namespace RL {
 			}
 		}
 
+		//////////////////////////////////////////////////////////////////////////
+		ReSampleRateNew::ReSampleRateNew()
+		{
+
+		}
+
+		ReSampleRateNew::~ReSampleRateNew()
+		{
+
+		}
+
+		void ReSampleRateNew::initialization(int nSampleRateIn, int nSampleRateOut, int nChannel)
+		{
+			if (nChannel >= 1 && nChannel <= 2) {
+
+				int error = 0;
+				m_DataState = src_new(SRC_LINEAR, nChannel, std::addressof(error));
+				if (!m_DataState) {
+					printf("\n\nError : src_new() failed : %s.\n\n", src_strerror(error));
+				}
+
+				m_nSampleRateIn = nSampleRateIn;
+				m_nSampleRateOut = nSampleRateOut;
+				m_nChannel = nChannel;
+			}
+		}
+
+		void ReSampleRateNew::resample_process_fixed(int16_t* bufferIn, size_t bufferLenIn, size_t sample_per_channel, int16_t* bufferOut, size_t &outLen)
+		{
+			m_DataResample.data_in = m_in;
+			m_DataResample.data_out = m_out;
+			m_DataResample.end_of_input = 1;
+			m_DataResample.src_ratio = 1.0 * m_nSampleRateOut / m_nSampleRateIn;
+			m_DataResample.input_frames = sample_per_channel * m_nChannel;
+			m_DataResample.output_frames = sample_per_channel * m_DataResample.src_ratio * m_nChannel;
+
+			memset(m_in, 0, 4096 * sizeof(float));
+			memset(m_out, 0, 4096 * sizeof(float));
+
+			for (int i = 0; i < bufferLenIn; i++) {
+				m_in[i] = bufferIn[i];
+			}
+
+			int nCountSample = 0;
+			outLen = 0;
+			while (true) {
+				src_reset(m_DataState);
+				int ret = src_process(m_DataState, std::addressof(m_DataResample));
+				if (0 == ret) {
+					int buf_sizePCM = m_DataResample.output_frames_gen;
+					int i = 0; int j = 0;
+					for (; i < 4096 && i < buf_sizePCM && j < buf_sizePCM; i++, j++)
+					{
+						bufferOut[j] = m_out[i];
+					}
+					outLen += buf_sizePCM;
+
+					printf("-------- output_frames_gen[%d], in_used_frame[%d] end_of_input[%d] src_ratio[%f]------ \n",
+						m_DataResample.output_frames_gen, m_DataResample.input_frames_used,
+						m_DataResample.end_of_input, m_DataResample.src_ratio);
+				}
+				else {
+					printf("src_simple error: %s \n", src_strerror(ret));
+					printf("111-------- output_frames_gen[%d], in_used_frame[%d] end_of_input[%d]------\n",
+						m_DataResample.output_frames_gen, m_DataResample.input_frames_used, m_DataResample.end_of_input);
+					break;
+				}
+
+				if (m_DataResample.input_frames_used == m_DataResample.input_frames ||
+					m_DataResample.output_frames_gen == m_DataResample.output_frames) {
+					m_DataResample.end_of_input = 1;
+					break;
+				}
+				nCountSample += m_DataResample.input_frames_used;
+				m_DataResample.data_in += m_DataResample.input_frames_used;
+				m_DataResample.input_frames -= m_DataResample.input_frames_used;
+				m_DataResample.end_of_input = 0;
+			}
+		}
+
 	}//namespace RecordCapture
 }//namespace RL

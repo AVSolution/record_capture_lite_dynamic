@@ -88,6 +88,28 @@ namespace RL {
 			int m_nChannel;
 		};
 
+		//ReSampleRateNew
+		class ReSampleRateNew
+		{
+		public:
+			ReSampleRateNew();
+			~ReSampleRateNew();
+
+			void initialization(int nSampleRateIn, int nSampleRateOut, int nChannel);
+
+			void resample_process_fixed(int16_t* bufferIn, size_t bufferLenIn, size_t sample_per_channel,  int16_t* bufferOut, size_t &outLen);
+
+		private:
+			float m_in[4906] = { 0 };
+			float m_out[4096] = { 0 };
+			SRC_DATA m_DataResample;
+			SRC_STATE* m_DataState = nullptr;
+
+			int m_nSampleRateIn;
+			int m_nSampleRateOut;
+			int m_nChannel;
+		};
+
 	}//namespace RecordCapture
 }//namespace RL
 

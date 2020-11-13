@@ -2,24 +2,23 @@
 #define __RESAMPLERATE_H__
 
 #include "../include/samplerate.h"
-#pragma comment(lib,"../libsamplerate/lib/samplerate")
 
 #include <iostream>
 
 namespace RL {
 	namespace RecordCapture {
 		//2 - 1
-		static void stereo_2_mono(const int16_t *src_audio,
+		void stereo_2_mono(const int16_t *src_audio,
 			int sapmples_per_channel, int16_t *dst_audio);
 		//1 - 2
-		static void mono_2_stereo(const int16_t *src_audio,
+		void mono_2_stereo(const int16_t *src_audio,
 			int sapmples_per_channel, int16_t *dst_audio);
 		//1 + 1 - 2
-		static void combine_2_stereo(const int16_t *main_audio,
+		void combine_2_stereo(const int16_t *main_audio,
 			const int16_t *extn_audio,
 			int sapmples_per_channel, int16_t *dst_audio);
 		//2 + 2 - 2
-		static void combine_2_stereo2(const int16_t *main_audio,
+		void combine_2_stereo2(const int16_t *main_audio,
 			const int16_t *extn_audio,
 			int sapmples_per_channel, int16_t *dst_audio);
 		

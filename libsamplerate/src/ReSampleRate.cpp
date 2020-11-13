@@ -2,6 +2,8 @@
 
 #pragma  warning(disable:4996) 
 
+#pragma comment(lib,"../libsamplerate/lib/Debug/samplerate")
+
 namespace RL {
 	namespace RecordCapture {
 
@@ -358,9 +360,13 @@ namespace RL {
 			memset(m_in, 0, 4096 * sizeof(float));
 			memset(m_out, 0, 4096 * sizeof(float));
 
-			for (int i = 0; i < bufferLenIn; i++) {
-				m_in[i] = bufferIn[i];
-			}
+			//for (int i = 0; i < bufferLenIn; i++) {
+
+			//	m_in[i] = bufferIn[i];
+			//}
+
+			//void src_short_to_float_array(const short *in, float *out, int len);
+			src_short_to_float_array(bufferIn, m_in, bufferLenIn);
 
 			int nCountSample = 0;
 			outLen = 0;
@@ -368,12 +374,13 @@ namespace RL {
 				src_reset(m_DataState);
 				int ret = src_process(m_DataState, std::addressof(m_DataResample));
 				if (0 == ret) {
-					int buf_sizePCM = m_DataResample.output_frames_gen;
+					int buf_sizePCM = m_DataResample.output_frames_gen * m_nChannel;
 					int i = 0; int j = 0;
-					for (; i < 4096 && i < buf_sizePCM && j < buf_sizePCM; i++, j++)
-					{
-						bufferOut[j] = m_out[i];
-					}
+					//for (; i < 4096 && i < buf_sizePCM && j < buf_sizePCM; i++, j++)
+					//{
+					//	bufferOut[j] = m_out[i];
+					//}
+					src_float_to_short_array(m_out, bufferOut, buf_sizePCM);
 					outLen += buf_sizePCM;
 
 					printf("-------- output_frames_gen[%d], in_used_frame[%d] end_of_input[%d] src_ratio[%f]------ \n",

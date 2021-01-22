@@ -22,6 +22,8 @@ namespace RecordCapture {
 	int Width(const ImageRect &rect);
     const ImageRect &Rect(const Image &img);
 
+	char* _WTA(__in wchar_t* pszInBuf, __in int nInSize, __out char** pszOutBuf, __out int* pnOutSize);
+
     template <typename F, typename M, typename W> struct CaptureData {
         std::shared_ptr<Timer> FrameTimer;
         F OnNewFrame;

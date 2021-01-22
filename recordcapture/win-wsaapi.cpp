@@ -8,6 +8,11 @@
 namespace RL {
 	namespace RecordCapture {
 
+#define RECORD_AUDIO_RESAMPLE_SAMPLERATE  44100
+#define RECORD_AUDIO_RESAMPLE_CHANNEL 2
+#define RECORD_AUDIO_RESAMPLE_BYTEPERSAMPLE 2
+//#define RECORD_AUDIO_SIMULATION_MIC
+
 		WSAAPISource::WSAAPISource()
 		{
 			CoInitializeEx(NULL, COINIT_MULTITHREADED);
@@ -19,6 +24,8 @@ namespace RL {
 		{
 			SetEvent(stopSignal_);
 			CoUninitialize();
+
+			uninitSpeexSrc();
 		}
 
 		void WSAAPISource::Pause() {
@@ -27,7 +34,7 @@ namespace RL {
 		void WSAAPISource::Resume() {
 
 		}
-		
+
 		DUPL_RETURN WSAAPISource::Init(std::shared_ptr<Thread_Data> data, const Speaker& speaker) {
 			Data = data;
 			AudioDeviceInfo_ = speaker.audioDeviceInfo;
@@ -54,13 +61,19 @@ namespace RL {
 			if (FAILED(hr))
 				return DUPL_RETURN_ERROR_EXPECTED;
 
-			initFormat();
+			initFormat(false);
 
-			LogInstance()->rlog(IRecordLog::LOG_INFO, 
-				"default audio device speaker SamplerPerSec: %d, nChannel: %d, BitPerSample: %d",
-				wfex->nSamplesPerSec,wfex->nChannels,wfex->wBitsPerSample);
+			CoTaskMemPtr<WCHAR> w_id;
+			device->GetId(&w_id);
+			char* pszOutput = nullptr; int outputlen = 0;
+			_WTA(w_id, wcslen(w_id), std::addressof(pszOutput), std::addressof(outputlen));
 
-			hr = client->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_LOOPBACK, BUFFER_TIME_100NS, 0, wfex,nullptr);
+			LogInstance()->rlog(IRecordLog::LOG_INFO,
+				"default audio device speaker id: %s \n\t SamplerPerSec: %d, nChannel: %d, BitPerSample: %d",
+				pszOutput, wfex->nSamplesPerSec, wfex->nChannels, wfex->wBitsPerSample);
+			delete[] pszOutput;
+
+			hr = client->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_EVENTCALLBACK | AUDCLNT_STREAMFLAGS_LOOPBACK, BUFFER_TIME_100NS, 0, wfex, nullptr);
 			if (FAILED(hr))
 				return DUPL_RETURN_ERROR_EXPECTED;
 
@@ -75,20 +88,24 @@ namespace RL {
 
 			client->Start();
 
+			initSpeexSrc(false);
+
 			return DUPL_RETURN::DUPL_RETURN_SUCCESS;
 		}
 
-		void WSAAPISource::initFormat()
+		void WSAAPISource::initFormat(bool input /*= true*/)
 		{
 			switch (wfex->wFormatTag)
 			{
 			case WAVE_FORMAT_IEEE_FLOAT: {
+				LogInstance()->rlog(IRecordLog::LOG_INFO, "initFormat:  %s WAVE_FORMAT_IEEE_FLOAT", input ? "Microphone Audio" : "Speaker Audio");
 				wfex->wFormatTag = WAVE_FORMAT_PCM;
 				wfex->wBitsPerSample = 16;
 				wfex->nBlockAlign = wfex->wBitsPerSample / 8 * wfex->nChannels;
 				wfex->nAvgBytesPerSec = wfex->nSamplesPerSec * wfex->nBlockAlign;
 			}break;
 			case WAVE_FORMAT_EXTENSIBLE: {
+				LogInstance()->rlog(IRecordLog::LOG_INFO, "initFormat: %s WAVE_FORMAT_EXTENSIBLE", input ? "Microphone Audio" : "Speaker Audio");
 				PWAVEFORMATEXTENSIBLE pEx = (PWAVEFORMATEXTENSIBLE)(wfex.Get());
 				if (IsEqualGUID(KSDATAFORMAT_SUBTYPE_IEEE_FLOAT, pEx->SubFormat)) {
 					pEx->SubFormat = KSDATAFORMAT_SUBTYPE_PCM;
@@ -102,8 +119,37 @@ namespace RL {
 			}
 		}
 
+		void WSAAPISource::initSpeexSrc(bool input /*= true*/)
+		{
+			if (resampler == nullptr) {
+				int sampleIn = wfex->nSamplesPerSec;
+				int sampleout = RECORD_AUDIO_RESAMPLE_SAMPLERATE;
+				int nChannel = wfex->nChannels;
+				int err = 0;
+				if (sampleIn == sampleout)
+					return;
+				resampler = speex_resampler_init(nChannel, sampleIn, sampleout, 10, &err);
+				speex_resampler_set_rate(resampler, sampleIn, sampleout);
+				speex_resampler_skip_zeros(resampler);
+				bufferOut = new unsigned char[48000 * 2 * 2];
+				memset(bufferOut, 0, 48000 * 2 * 2);
+				LogInstance()->rlog(IRecordLog::LOG_INFO, "%s speex src samplerate: %d", input ? "Microphone Audio" : "Speaker Audio", RECORD_AUDIO_RESAMPLE_SAMPLERATE);
+			}
+		}
+
+		void WSAAPISource::uninitSpeexSrc()
+		{
+			bufferOut = nullptr;
+			if (NULL != resampler) {
+				speex_resampler_destroy(resampler);
+				delete[] bufferOut;
+				resampler = nullptr;
+				bufferOut = nullptr;
+			}
+		}
+
 		DUPL_RETURN WSAAPISource::ProcessFrame(const Speaker& currentSpeaker) {
-			
+
 			//DWORD waitResult = WaitForSingleObject(receiveSignal_, INFINITE);
 			HANDLE handle[] = { receiveSignal_,stopSignal_ };
 			WaitForMultipleObjects(2, handle, false, 10);
@@ -114,23 +160,44 @@ namespace RL {
 			while (framesAvailable) {
 				DWORD dflage = 0;
 				hr = capture->GetBuffer(std::addressof(buffer), std::addressof(framesAvailable),
-					std::addressof(dflage),nullptr,nullptr);
+					std::addressof(dflage), nullptr, nullptr);
 				if (SUCCEEDED(hr)) {
-
 					if (framesAvailable > 0) {
-
 						frame = framesAvailable * wfex->nChannels * wfex->wBitsPerSample / 8;
 						if (dflage & AUDCLNT_BUFFERFLAGS_SILENT)
 							memset(buffer, 0, frame);
+						if (NULL != resampler) {//active resampler module.
+							int ret = 0;
+							spx_uint32_t in_len = frame / sizeof(int16_t);
+							spx_uint32_t out_len = frame / sizeof(int16_t) *  (1.0 * RECORD_AUDIO_RESAMPLE_SAMPLERATE / wfex->nSamplesPerSec);
+							//static FILE* infd = fopen("speed_samplerate_in.pcm", "wb+");
+							//fwrite(buffer, sizeof(int16_t), in_len, infd);
+							if (wfex->nChannels == 1)
+								ret = speex_resampler_process_interleaved_int(resampler, (int16_t*)buffer, &in_len, (int16_t*)bufferOut, &out_len);
+							else
+								ret = speex_resampler_process_int(resampler, 0, (int16_t*)buffer, &in_len, (int16_t*)bufferOut, &out_len);
+							if (ret == RESAMPLER_ERR_SUCCESS) {
+								//static FILE* outfd = fopen("speed_samplerate_out.pcm", "wb+");
+								//fwrite(bufferOut, sizeof(int16_t), out_len, outfd);
+								//printf("processed in_len: [%d]; out_len = %d \n", in_len, out_len);
+							}
+							else {
+								LogInstance()->rlog(IRecordLog::LOG_INFO, "!!!!!speak speex src error: %d",ret);
+							}
+						}
+						else {
+							bufferOut = buffer;
+						}
 						if (Data->SpeakerCaptureData.onAudioFrame) {
 							AudioFrame audioFrame;
-							audioFrame.buffer = (void*)buffer;
+							audioFrame.buffer = (void*)bufferOut;//(void*)buffer;
 							audioFrame.bytesPerSample = wfex->wBitsPerSample / 8;
-							audioFrame.samples = framesAvailable;
+							audioFrame.samples = framesAvailable * (1.0 * RECORD_AUDIO_RESAMPLE_SAMPLERATE / wfex->nSamplesPerSec);
 							audioFrame.channels = wfex->nChannels;
-							audioFrame.samplesPerSec = wfex->nSamplesPerSec;
+							audioFrame.samplesPerSec = RECORD_AUDIO_RESAMPLE_SAMPLERATE; //wfex->nSamplesPerSec;
 							audioFrame.renderTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-							Data->SpeakerCaptureData.onAudioFrame(audioFrame);
+							if (audioFrame.buffer)
+								Data->SpeakerCaptureData.onAudioFrame(audioFrame);
 						}
 					}
 				}
@@ -157,6 +224,7 @@ namespace RL {
 			if (FAILED(hr))
 				return DUPL_RETURN_ERROR_EXPECTED;
 
+			//enumerator->GetDevice() //get  special deviceId.
 			hr = enumerator->GetDefaultAudioEndpoint(input_ ? eCapture : eRender, eCommunications, device.Assign());
 			if (FAILED(hr))
 				return DUPL_RETURN_ERROR_EXPECTED;
@@ -170,13 +238,19 @@ namespace RL {
 			if (FAILED(hr))
 				return DUPL_RETURN_ERROR_EXPECTED;
 
-			initFormat();
+			initFormat(true);
+
+			CoTaskMemPtr<WCHAR> w_id;
+			device->GetId(&w_id);
+			char* pszOutput = nullptr; int outputlen = 0;
+			_WTA(w_id, wcslen(w_id), std::addressof(pszOutput), std::addressof(outputlen));
 
 			LogInstance()->rlog(IRecordLog::LOG_INFO,
-				"default audio device microphone SamplerPerSec: %d, nChannel: %d, BitPerSample: %d",
-				wfex->nSamplesPerSec, wfex->nChannels, wfex->wBitsPerSample);
+				"default audio device microphone id: %s \n\t SamplerPerSec: %d, nChannel: %d, BitPerSample: %d",
+				pszOutput, wfex->nSamplesPerSec, wfex->nChannels, wfex->wBitsPerSample);
+			delete[] pszOutput;
 
-			hr = client->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_EVENTCALLBACK , BUFFER_TIME_100NS, 0, wfex, nullptr);
+			hr = client->Initialize(AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_EVENTCALLBACK, BUFFER_TIME_100NS, 0, wfex, nullptr);
 			if (FAILED(hr))
 				return DUPL_RETURN_ERROR_EXPECTED;
 
@@ -190,6 +264,8 @@ namespace RL {
 				return DUPL_RETURN_ERROR_EXPECTED;
 
 			client->Start();
+
+			initSpeexSrc(true);
 
 			return DUPL_RETURN::DUPL_RETURN_SUCCESS;
 		}
@@ -210,19 +286,54 @@ namespace RL {
 				if (SUCCEEDED(hr)) {
 
 					if (framesAvailable > 0) {
-
 						frame = framesAvailable * wfex->nChannels * wfex->wBitsPerSample / 8;
 						if (dflage & AUDCLNT_BUFFERFLAGS_SILENT)
 							memset(buffer, 0, frame);
+#ifdef RECORD_AUDIO_SIMULATION_MIC
+						 {//simulation microphone input audio buffer
+							frame = 441 * 2 * 2;
+							static FILE* fSimulationFile = fSimulationFile = fopen("test_44100_2.pcm", "rb+");
+							static std::unique_ptr<uint8_t[]> simuBuffer = std::make_unique<uint8_t[]>(frame);
+							if (feof(fSimulationFile))
+								fseek(fSimulationFile, 0, SEEK_SET);
+							if (fread(simuBuffer.get(), frame, 1, fSimulationFile) != 0)
+								buffer = simuBuffer.get();
+							else {
+								fseek(fSimulationFile, 0, SEEK_SET);
+								return DUPL_RETURN_SUCCESS;
+							}
+						}
+#endif
+						if (NULL != resampler) {//active resampler module.
+							int ret = 0;
+							spx_uint32_t in_len = frame / sizeof(int16_t);
+							spx_uint32_t out_len = frame / sizeof(int16_t) *  (1.0 * RECORD_AUDIO_RESAMPLE_SAMPLERATE / wfex->nSamplesPerSec);
+							if (wfex->nChannels == 1)
+								ret = speex_resampler_process_interleaved_int(resampler, (int16_t*)buffer, &in_len, (int16_t*)bufferOut, &out_len);
+							else
+								ret = speex_resampler_process_int(resampler, 0, (int16_t*)buffer, &in_len, (int16_t*)bufferOut, &out_len);
+							if (ret == RESAMPLER_ERR_SUCCESS) {
+								//static FILE* outfd = fopen("speed_samplerate.pcm", "wb+");
+								//fwrite(bufferOut, sizeof(int16_t), out_len, outfd);
+								//printf("processed in_len: [%d]; out_len = %d \n", in_len, out_len);
+							}
+							else {
+								LogInstance()->rlog(IRecordLog::LOG_INFO, "!!!!!microphone speex src error: %d", ret);
+							}
+						}
+						else {
+							bufferOut = buffer;
+						}
 						if (Data->MicrophoneCaptureData.onAudioFrame) {
 							AudioFrame audioFrame;
-							audioFrame.buffer = (void*)buffer;
+							audioFrame.buffer = (void*)bufferOut;//(void*)buffer;
 							audioFrame.bytesPerSample = wfex->wBitsPerSample / 8;
-							audioFrame.samples = framesAvailable;
+							audioFrame.samples = framesAvailable * (1.0 * RECORD_AUDIO_RESAMPLE_SAMPLERATE / wfex->nSamplesPerSec);
 							audioFrame.channels = wfex->nChannels;
-							audioFrame.samplesPerSec = wfex->nSamplesPerSec;
+							audioFrame.samplesPerSec = RECORD_AUDIO_RESAMPLE_SAMPLERATE; //wfex->nSamplesPerSec;
 							audioFrame.renderTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-							Data->MicrophoneCaptureData.onAudioFrame(audioFrame);
+							if (audioFrame.buffer)
+								Data->MicrophoneCaptureData.onAudioFrame(audioFrame);
 						}
 					}
 				}

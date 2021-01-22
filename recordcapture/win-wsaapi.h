@@ -8,6 +8,9 @@
 #include <mmdeviceapi.h>
 #include <Audioclient.h>
 
+#include "../speex_resampler/include/speex/speex_resampler.h"
+#pragma comment(lib,"../speex_resampler/lib/libspeexdsp")
+
 namespace RL {
 	namespace RecordCapture {
 
@@ -23,7 +26,9 @@ namespace RL {
 			HANDLE stopSignal_;
 			CoTaskMemPtr<WAVEFORMATEX> wfex;
 			UINT32 frame = 0;
-			LPBYTE buffer = nullptr;
+			/*LPBYTE*/ uint8_t* buffer = nullptr;
+			SpeexResamplerState *resampler = NULL;
+			/*LPBYTE*/uint8_t* bufferOut = nullptr;
 
 		public:
 			WSAAPISource();
@@ -31,7 +36,9 @@ namespace RL {
 			
 			void Pause();
 			void Resume();
-			void initFormat();
+			void initFormat(bool input = true);
+			void initSpeexSrc(bool input = true);
+			void uninitSpeexSrc();
 			DUPL_RETURN Init(std::shared_ptr<Thread_Data> data, const Speaker& speaker);
 			DUPL_RETURN ProcessFrame(const Speaker& currentSpeaker);
 			DUPL_RETURN Init(std::shared_ptr<Thread_Data> data, const Microphone& microphone);

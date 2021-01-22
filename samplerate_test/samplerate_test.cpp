@@ -8,30 +8,44 @@
 #pragma  warning(disable:4996)
 #include <thread>
 
-#include "../speed_resample/AudioChunk.h"
-#include "../speed_resample/SpeexResampler.h"
-
-#include "../speed_resample/ResamplerEx.h"
-#pragma comment(lib,"..\\bind\\resample.lib")//debug mode.
-
-#include "../my_speed_resampler/include/speex/speex_resampler.h"
-#pragma comment(lib,"../my_speed_resampler/lib/libspeexdsp")
-
 //#define SAMPLERATE
 //#define SAMPLERATEX
-#define SAMPLERATE_NEW
+//#define SAMPLERATE_NEW
+
+//
 //#define SPEED_SAMPLERATE
-//#define SPEED_SAMPLERATEEx
+//#define SPEED_SAMPLERATEEX
 //#define mian_test
-//#define my_speed_resample
+#define SPEEX_DSP
+//#define RESAMPLE
+
+#ifdef SPEED_SAMPLERATE//base hook resample
+#include "../speed_resample/AudioChunk.h"
+#include "../speed_resample/SpeexResampler.h"
+#endif
+
+#ifdef SPEED_SAMPLERATEEX//base hook resample
+#include "../speed_resample/ResamplerEx.h"
+#pragma comment(lib,"..\\bind\\resample.lib")//debug mode.
+#endif
+
+#ifdef SPEEX_DSP//speex.dsp lib
+#include "../speex_resampler/include/speex/speex_resampler.h"
+#pragma comment(lib,"../speex_resampler/lib/libspeexdsp")
+#endif
+
+#ifdef RESAMPLE
+#include "../libresample/include/libresample.h"
+#pragma comment(lib,"../libresample/lib/libresampled.lib")
+#endif
 
 int main()
 {
-	int sampleIn = 48000;
-	int samleout = 44100;
-	int nChannel = 1;
+	int sampleIn = 44100;
+	int sampleout = 48000;
+	int nChannel = 2;
 	int nRead_Buffer = sampleIn / 100 * 2 * nChannel;//the length to read from source pcm file.
-	int nConvert_Buffer = samleout / 100 * 2 * nChannel;
+	int nConvert_Buffer = sampleout / 100 * 2 * nChannel;
 
 	int bufferLen_max = 4096;
 	std::unique_ptr<char[]> pReadBuffer = std::make_unique<char[]>(bufferLen_max);
@@ -40,7 +54,7 @@ int main()
 	std::unique_ptr<unsigned char[]> pConvertBuffer = std::make_unique<unsigned char[]>(bufferLen_max);
 	memset(pConvertBuffer.get(), 0, bufferLen_max);
 
-	FILE* fPcmSrc = fopen("48000_1_16.pcm", "rb+");
+	FILE* fPcmSrc = fopen("speed_samplerate_in.pcm", "rb+");
 	if (nullptr == fPcmSrc) {
 		std::cout << "" << std::endl;
 		return -1;
@@ -49,7 +63,7 @@ int main()
 #ifdef SAMPLERATE
 	//initialization the samplerate param list.
 	RL::RecordCapture::ReSampleRate samplerate;
-	samplerate.initialization(sampleIn, samleout, nChannel);
+	samplerate.initialization(sampleIn, sampleout, nChannel);
 
 	FILE* fPcmDst = fopen("speaker_samplerate_convert_1.pcm", "wb+");
 	if (nullptr == fPcmDst) {
@@ -111,7 +125,7 @@ int main()
 
 	nRead_Buffer *= 2;
 	RL::RecordCapture::ReSampleRateEx sampleEx;
-	sampleEx.initialization(sampleIn, samleout, nChannel);
+	sampleEx.initialization(sampleIn, sampleout, nChannel);
 	while ((fread(pReadBuffer.get(), nRead_Buffer, 1, fPcmSrc) != 0)) {
 		if (nFrame % 10 == 0)
 			printf("processing the %d frame \n", nFrame);
@@ -146,6 +160,32 @@ int main()
 		//RL::RecordCapture::get_stereo_right((int16_t*)pReadBuffer.get(), 480, (int16_t*)right_src.get());
 		//fwrite(right_src.get(), nRead_Buffer / 2, 1, fPcmSrc_right);
 		//fflush(fPcmSrc_right);	
+	}
+#endif
+
+#ifdef SAMPLERATE_NEW
+	int nFrame = 0;
+	getchar();
+	FILE* fPcmDst = fopen("speaker_samplerate_new_convert.pcm", "wb+");
+	if (nullptr == fPcmDst) {
+		std::cout << "" << std::endl;
+		return -1;
+	}
+
+	//nRead_Buffer *= 2;
+	RL::RecordCapture::ReSampleRateNew samplenew;
+	samplenew.initialization(sampleIn, sampleout, nChannel);
+	while ((fread(pReadBuffer.get(), nRead_Buffer, 1, fPcmSrc) != 0)) {
+		if (nFrame % 10 == 0)
+			printf("processing the %d frame \n", nFrame);
+		nFrame++;
+
+		size_t outLen = 0;
+		samplenew.resample_process_fixed((int16_t*)pReadBuffer.get(), nRead_Buffer / sizeof(int16_t), nRead_Buffer / sizeof(int16_t) / nChannel, (int16_t*)pConvertBuffer.get(), outLen);
+		if (outLen) {
+			fwrite(pConvertBuffer.get(), outLen, sizeof(int16_t), fPcmDst);
+			fflush(fPcmDst);
+		}
 	}
 #endif
 
@@ -187,35 +227,8 @@ int main()
 
 #endif
 
-#ifdef SAMPLERATE_NEW
-	int nFrame = 0;
-	getchar();
-	FILE* fPcmDst = fopen("speaker_samplerate_new_convert.pcm", "wb+");
-	if (nullptr == fPcmDst) {
-		std::cout << "" << std::endl;
-		return -1;
-	}
+#ifdef  SPEED_SAMPLERATEEX
 
-	//nRead_Buffer *= 2;
-	RL::RecordCapture::ReSampleRateNew samplenew;
-	samplenew.initialization(sampleIn, samleout, nChannel);
-	while ((fread(pReadBuffer.get(), nRead_Buffer, 1, fPcmSrc) != 0)) {
-		if (nFrame % 10 == 0)
-			printf("processing the %d frame \n", nFrame);
-		nFrame++;
-
-		size_t outLen = 0;
-		samplenew.resample_process_fixed((int16_t*)pReadBuffer.get(), nRead_Buffer / sizeof(int16_t), nRead_Buffer / sizeof(int16_t) / nChannel, (int16_t*)pConvertBuffer.get(), outLen);
-		if (outLen) {
-			fwrite(pConvertBuffer.get(), outLen, sizeof(int16_t), fPcmDst);
-			fflush(fPcmDst);
-		}
-	}
-#endif
-
-#ifdef  SPEED_SAMPLERATEEx
-
-	std::cout << sizeof(float);
 	int nFrame = 0;
 	getchar();
 
@@ -237,7 +250,7 @@ int main()
 		audioChunk.SetData(pReadBuffer.get(), nRead_Buffer, 48000, 2, 16, false);
 		if (pResamplerEx == nullptr) {
 			pResamplerEx = CreateResamplerEx();
-			pResamplerEx->Init(2, 48000, 44100,2048);
+			pResamplerEx->Init(2, 48000, 44100, 2048);
 		}
 
 		if (pResamplerEx) {
@@ -254,69 +267,43 @@ int main()
 
 #endif
 
-#ifdef my_speed_resample
+#ifdef SPEEX_DSP
+	getchar();
+
 	SpeexResamplerState *resampler = NULL;
 	int err = 0;
 
-	resampler = speex_resampler_init(2, 48000, 44100, 10, &err);
-	speex_resampler_set_rate(resampler, 48000, 44100);
+	resampler = speex_resampler_init(nChannel,sampleIn, sampleout, 10, &err);
+	speex_resampler_set_rate(resampler, sampleIn, sampleout);
 	speex_resampler_skip_zeros(resampler);
 
-	FILE* pcmfd = fopen("speaker.pcm", "rb+");
-	if (!pcmfd)
-	{
-		//cout << "open test.cpm faile" << endl;
-		printf("open test.cpm faile \n");
-		return -1;
-	}
-
-
-	FILE* outfd = fopen("44100k.pcm", "wb+");
+	FILE* outfd = fopen("speed_samplerate.pcm", "wb+");
 	if (!outfd)
 	{
-		fclose(pcmfd);
-		printf("open test.cpm faile \n");
+		fclose(outfd);
+		printf("open speed_samplerate.cpm faile \n");
 		return -1;
 	}
 
-	int samples = 480 * 2; 
-	int channel = 2;
-
-	int buffer_size = samples * channel;
-	char* pcmbuffer = new char[buffer_size];
-	memset(pcmbuffer, 0, buffer_size);
-
-	unsigned char* out_buffer = new unsigned char[buffer_size * 2];
-	memset(out_buffer, 0, buffer_size * 2);
-
-	unsigned char* last_buffer = new unsigned char[buffer_size];
-	memset(last_buffer, 0, buffer_size);
-
-	int frame = 0;
+	int nFrame = 0;
 	int ret = 0;
-
-	while (fread(pcmbuffer, buffer_size, 1, pcmfd) != 0)
+	while (fread(pReadBuffer.get(), nRead_Buffer, 1, fPcmSrc) != 0)
 	{
-		memset(out_buffer, 0, buffer_size * 2);
-		memset(last_buffer, 0, buffer_size);
+		if (nFrame % 20 == 0)
+			printf("processing the %d frame \n", nFrame);
+		nFrame++;
 
-		unsigned int inlen = buffer_size / 2;
-		unsigned int outlen = buffer_size;	
+		spx_uint32_t out_len = nConvert_Buffer / sizeof(int16_t);
+		spx_uint32_t in_len = nRead_Buffer / sizeof(int16_t);
 
-		ret = speex_resampler_process_interleaved_int(resampler, (short*)pcmbuffer, &inlen, (short*)out_buffer, &outlen);
+		if(nChannel == 1)
+			ret = speex_resampler_process_interleaved_int(resampler,(int16_t*)pReadBuffer.get(),&in_len,	(int16_t*)pConvertBuffer.get(),&out_len);
+		else if (nChannel == 2)
+			ret = speex_resampler_process_int(resampler, 0, (int16_t*)pReadBuffer.get(), &in_len, (int16_t*)pConvertBuffer.get(), &out_len);
 		if (ret == RESAMPLER_ERR_SUCCESS)
 		{
-			//int i = 0, j = 0;
-			//for (; i < outlen * 2; i += 4, j += 2)
-			//{
-			//	last_buffer[j] = out_buffer[i];
-			//	last_buffer[j + 1] = out_buffer[i + 1];
-			//}
-			fwrite(out_buffer, sizeof(short), outlen, outfd);  /* Êä³öË«ÉùµÀ */
-			//fwrite(last_buffer, sizeof(short), outlen / 2, outfd);
-
-
-			printf("processed[%d] outlen = %d \n", inlen, outlen);
+			fwrite(pConvertBuffer.get(), sizeof(int16_t), out_len, outfd);
+			printf("processed in_len: [%d]; out_len = %d \n", in_len, out_len);
 		}
 		else
 		{
@@ -324,9 +311,62 @@ int main()
 		}
 	}
 
-
 	speex_resampler_destroy(resampler);
 
+#endif
+
+#ifdef RESAMPLE
+	int nFrame = 0;
+	getchar();
+
+	FILE* outfd = fopen("resample.pcm", "wb+");
+	if (!outfd)
+	{
+		fclose(outfd);
+		printf("open resample.cpm faile \n");
+		return -1;
+	}
+
+	double resample_factor = double(sampleout) / sampleIn;
+	void* resample_handle = resample_open(1, resample_factor, resample_factor);
+	if (resample_handle) {
+
+		while (fread(pReadBuffer.get(), nRead_Buffer, 1, fPcmSrc) != 0) {
+			if (nFrame % 20 == 0)
+				printf("processing the %d frame \n", nFrame);
+			nFrame++;
+
+			int lastFlag = 0;
+			int nin_Pos = 0; int nout_pos = 0; int nBufferUserd = 0;
+			while (!lastFlag)
+			{
+				int nConvertLen = resample_process(resample_handle, resample_factor,
+					(float*)pReadBuffer.get() + nin_Pos, nRead_Buffer / sizeof(float) - nin_Pos,
+					lastFlag, &nBufferUserd, (float*)pConvertBuffer.get() + nout_pos, bufferLen_max / sizeof(float) - nout_pos);
+
+				if (nConvertLen) {
+					lastFlag = (nBufferUserd + nin_Pos >= (nRead_Buffer / sizeof(float)) );
+					nin_Pos += nBufferUserd;
+					nout_pos += nConvertLen;
+				}
+				else
+					break;
+			}
+			if (nout_pos == nConvert_Buffer / sizeof(float))
+			{
+				fwrite(pConvertBuffer.get(), sizeof(float), nout_pos, outfd);
+				printf("processed in_len: [%d]; out_len = %d \n", nin_Pos * sizeof(float), nout_pos * sizeof(float));
+			}
+			else
+			{
+				printf("error: %d\n", 0);
+			}
+		}
+		resample_close(resample_handle);
+		resample_handle = nullptr;
+
+	}
+	
 #endif
 
 #ifdef mian_test

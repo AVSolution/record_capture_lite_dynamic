@@ -296,6 +296,11 @@ namespace RL {
 		//the log handle.
 		SC_LITE_EXTERN std::shared_ptr<IRecordLog> CreateRecordLog(const LogCallBack &logcallback);
 	}//namespace RecordCapture
+
+	namespace Util {
+		SC_LITE_EXTERN void MixerAddS16(int16_t* src1, const int16_t* src2, size_t size);
+		SC_LITE_EXTERN void convert32fToS16(const int32_t* src, size_t size, int16_t* dst);
+	}
 }//namespace RL
 
 #endif 

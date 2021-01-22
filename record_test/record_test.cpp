@@ -4,17 +4,20 @@
 #include "../RecordCapture/Capture.h"
 //#include "../RecordCapture/SCCommon.h"
 #include "../MediaStream/include/IWinMediaStreamer.h"
-#include "../MediaStream/include/AudioSampleFormatConvert.h"
+//#include "../MediaStream/include/AudioSampleFormatConvert.h"
 #include "CicleBuffer.h"
-#include "audioUtil.h"
+//#include "audioUtil.h"
+#include "../libsamplerate/src/ReSampleRate.h"
 #include <DbgHelp.h>
 #pragma comment(lib,"Dbghelp.lib")
 #ifdef _DEBUG
 #pragma comment(lib,"../bind/RecordCapture.lib")
 #pragma comment(lib,"../MediaStream/Debug/MediaStreamer.lib")
+//#pragma comment(lib,"../libsamplerate/lib/Debug/samplerate.lib")
 #else 
 #pragma  comment(lib,"../bin/RecordCapture.lib")
 #pragma comment(lib,"../MediaStream/Release/MediaStreamer.lib")
+//#pragma comment(lib,"../libsamplerate/lib/Release/samplerate.lib")
 #endif
 
 #include <algorithm>
@@ -200,7 +203,16 @@ int main()
 			nHeight -= 1;
 		logInstance->rlog(RLOG::LOG_INFO, "Destination width: %d,height:%d",nWidth,nHeight);
 	}
+	else {
+		logInstance->rlog(RLOG::LOG_INFO, "open yuer.exe client please...");
+		return 0;
+	}
 	
+	//record audio samplerate param.
+#define RECORD_AUDIO_RESAMPLE_SAMPLERATE  44100
+#define RECORD_AUDIO_RESAMPLE_CHANNEL 2
+#define RECORD_AUDIO_RESAMPLE_BYTEPERSAMPLE 2
+
 	IWinMediaStreamer* winMediaStreamer = CreateWinMediaStreamerInstance();
 	auto mux_initialization = [=]() {
 		const char* publishUrl = "C:\\tmp\\cris.mp4";
@@ -213,8 +225,8 @@ int main()
 		videoOptions.videoProfile = 2; // high profile
 		WinAudioOptions audioOptions;
 		audioOptions.audioBitRate = 128;
-		audioOptions.audioSampleRate = 48000;
-		audioOptions.audioNumChannels = 2;
+		audioOptions.audioSampleRate = RECORD_AUDIO_RESAMPLE_SAMPLERATE;
+		audioOptions.audioNumChannels = RECORD_AUDIO_RESAMPLE_CHANNEL;
 		audioOptions.isExternalAudioInput = true;
 		std::string mediaLog = RL::RecordCapture::GetLocalAppDataPath() + "/yuer/log/record/";
 		winMediaStreamer->initialize(publishUrl, videoOptions, audioOptions, WIN_MEDIA_STREAMER_SLK, mediaLog.c_str());
@@ -264,6 +276,11 @@ int main()
 	std::unique_ptr<CicleBuffer> mixAudioBuffer = std::make_unique<CicleBuffer>(48000 * 2 * 2, 0);
 	mixAudioBuffer->flushBuffer();
 
+	//1step mono2stero; 2step resample.
+
+	//RL::RecordCapture::ReSampleRateNew resampleMic;
+	//RL::RecordCapture::ReSampleRateNew resampleSpeaker;
+
 #ifdef SPEAKER_MODULE
 
 	std::atomic<int> realcounterAudio = 0;
@@ -299,7 +316,7 @@ int main()
 
 #ifdef ADD_MIC
 		if (mixAudioBuffer->readBuffer(outAudioBufferTemp.get(), len_s16, &readBufferLen)) {
-			int nMixLen = len / 2 > readBufferLen ? readBufferLen : len_s16;
+			int nMixLen = len_s16 > readBufferLen ? readBufferLen : len_s16;
 			RL::Util::MixerAddS16((int16_t*)outAudioBuffer.get(), (int16_t*)outAudioBufferTemp.get(), nMixLen / sizeof(int16_t));
 		}
 #endif
@@ -320,6 +337,7 @@ int main()
 			WinAudioFrame winAudioFrame;
 			winAudioFrame.data = outAudioBuffer.get();
 			winAudioFrame.frameSize = len_s16;
+			winAudioFrame.sampleRate = audioFrame.samplesPerSec;
 			winAudioFrame.pts = audioFrame.renderTimeMs;
 #ifdef RECORD
 			winMediaStreamer->inputAudioFrame(&winAudioFrame);
@@ -334,6 +352,7 @@ int main()
 	std::atomic<int> realcounterMic = 0;
 	auto onMicFrameStart = std::chrono::high_resolution_clock::now();
 	std::unique_ptr<unsigned char[]> outMicAudioBuffer = nullptr;
+	std::unique_ptr<uint8_t[]> outMicAudioResampleBuffer = nullptr;
 	std::shared_ptr<RL::RecordCapture::IScreenCaptureManager> micgrabber =
 		RL::RecordCapture::CreateCaptureConfiguration([&]() {
 		auto microphones = RL::RecordCapture::GetMicrophones();
@@ -346,6 +365,7 @@ int main()
 		if (audioFrame.bytesPerSample == 2) {
 			len_s16 = len;
 		}
+		
 		if (outMicAudioBuffer == nullptr) {
 			outMicAudioBuffer = std::make_unique<unsigned char[]>(len_s16);
 			memset(outMicAudioBuffer.get(), 0, len_s16);
@@ -353,8 +373,13 @@ int main()
 
 		if (audioFrame.bytesPerSample == 4)
 			RL::Util::convert32fToS16((int32_t*)audioFrame.buffer, len / sizeof(int32_t), (int16_t*)outMicAudioBuffer.get());
-		else if (audioFrame.bytesPerSample == 2)
+		else if (audioFrame.bytesPerSample == 2 && audioFrame.channels == 2)
 			memcpy(outMicAudioBuffer.get(), audioFrame.buffer, len_s16);
+		else
+		if (audioFrame.channels != RECORD_AUDIO_RESAMPLE_CHANNEL && audioFrame.channels == 1) {
+			RL::RecordCapture::mono_2_stereo((int16_t*)audioFrame.buffer, len_s16 / sizeof(int16_t), (int16_t*)outMicAudioBuffer.get());
+			len_s16 *= 2;
+		}
 
 		if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - onMicFrameStart).count() > 10 * 1000) {
 			auto fpsaudio = realcounterMic * 1.0 / 10;
@@ -373,6 +398,7 @@ int main()
 			winMicAudioFrame.data = outMicAudioBuffer.get();
 			winMicAudioFrame.frameSize = len_s16;
 			winMicAudioFrame.pts = audioFrame.renderTimeMs;
+			winMicAudioFrame.sampleRate = audioFrame.samplesPerSec;
 			//winMediaStreamer->inputAudioFrame(&winMicAudioFrame);
 #ifdef ADD_MIC
 			mixAudioBuffer->writeBuffer((void*)outMicAudioBuffer.get(), len_s16);

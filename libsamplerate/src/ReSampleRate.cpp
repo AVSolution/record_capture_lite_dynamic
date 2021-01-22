@@ -283,11 +283,13 @@ namespace RL {
 			m_DataResample.src_ratio = 1.0 * m_nSampleOut / m_nSampleIn;
 			m_DataResample.output_frames = sample_per_channel * 2 * m_nSampleOut / m_nSampleIn;
 
+			
 			int nCountSample = 0;
 			outLen = 0;
 			while (true) {
 				src_reset(m_DataState);
 				int ret = src_process(m_DataState, std::addressof(m_DataResample));
+				//int ret = src_simple(std::addressof(m_DataResample), SRC_LINEAR, m_nChannel);
 				if (0 == ret) {
 					int buf_sizePCM = m_DataResample.output_frames_gen * m_nChannel;
 					int i = 0; int j = 0;
@@ -354,8 +356,9 @@ namespace RL {
 			m_DataResample.data_out = m_out;
 			m_DataResample.end_of_input = 1;
 			m_DataResample.src_ratio = 1.0 * m_nSampleRateOut / m_nSampleRateIn;
+
 			m_DataResample.input_frames = sample_per_channel * m_nChannel;
-			m_DataResample.output_frames = sample_per_channel * m_DataResample.src_ratio * m_nChannel;
+			m_DataResample.output_frames = sample_per_channel * m_DataResample.src_ratio * m_nChannel ;
 
 			memset(m_in, 0, 4096 * sizeof(float));
 			memset(m_out, 0, 4096 * sizeof(float));

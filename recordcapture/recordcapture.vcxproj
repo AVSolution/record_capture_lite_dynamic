@@ -59,6 +59,7 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\bind\.conan\conanbuildinfo.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
@@ -102,6 +103,9 @@
       <EnableUAC>false</EnableUAC>
       <AdditionalOptions>dwmapi.lib shell32.lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y ..\speex_resampler\lib\*.pdb ..\bind\*.pdb</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -140,6 +144,9 @@
       <EnableUAC>false</EnableUAC>
       <AdditionalOptions>dwmapi.lib shell32.lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
+    <PostBuildEvent>
+      <Command>xcopy /y ..\speex_resampler\lib\*.pdb ..\bin\*.pdb</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -167,6 +174,7 @@
     <ClInclude Include="GDIFrameProcessor.h" />
     <ClInclude Include="GDIHelpers.h" />
     <ClInclude Include="GDIMouseProcessor.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="SCCommon.h" />
     <ClInclude Include="ThreadManager.h" />
     <ClInclude Include="win-wsaapi.h" />
@@ -183,6 +191,9 @@
     <ClCompile Include="ThreadManager.cpp" />
     <ClCompile Include="ThreadRunner.cpp" />
     <ClCompile Include="win-wsaapi.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="recordcapture.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

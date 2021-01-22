@@ -13,20 +13,6 @@
 namespace RL {
 	namespace RecordCapture {
 
-		char* _WTA(__in wchar_t* pszInBuf, __in int nInSize, __out char** pszOutBuf, __out int* pnOutSize)
-		{
-			if (!pszInBuf || !pszOutBuf || !pnOutSize || nInSize <= 0)return NULL;
-			*pnOutSize = WideCharToMultiByte(NULL, NULL, pszInBuf, nInSize, *pszOutBuf, 0, NULL, NULL);
-			if (*pnOutSize == 0)return NULL;
-			(*pnOutSize)++;
-			*pszOutBuf = new char[*pnOutSize];
-			memset((void*)*pszOutBuf, 0, sizeof(char)* (*pnOutSize));
-			if (WideCharToMultiByte(NULL, NULL, pszInBuf, nInSize, *pszOutBuf, *pnOutSize, NULL, NULL) == 0)
-				return NULL;
-			else
-				return *pszOutBuf;
-		}
-
 		std::vector<AudioDeviceInfo> GetAudioDevice(bool input)
 		{
 			std::vector<AudioDeviceInfo> audioDevices;
@@ -66,6 +52,7 @@ namespace RL {
 				char* pszOutput = nullptr; int outputlen = 0;
 				_WTA(w_id, wcslen(w_id), std::addressof(pszOutput), std::addressof(outputlen));
 				strcpy_s(info.id, outputlen, pszOutput);
+				delete [] pszOutput;
 
 				ComPtr<IPropertyStore> store;
 				HRESULT res;
@@ -81,11 +68,12 @@ namespace RL {
 						char* pszOutput = nullptr; int outputlen = 0;
 						_WTA(nameVar.pwszVal, len, std::addressof(pszOutput), std::addressof(outputlen));
 						strcpy_s(info.name, outputlen, pszOutput);
+						delete[] pszOutput;
 					}
 				}
 
 				//std::cout << "name: " << info.name << std::endl << " id:" << info.id << std::endl;
-				LogInstance()->rlog(IRecordLog::LOG_INFO,"name: %s,id: %s",info.name,info.id);
+				LogInstance()->rlog(IRecordLog::LOG_INFO,"[%s] name: %s,id: %s",input ? "Input": "Playout" ,info.name,info.id);
 				audioDevices.push_back(info);
 			}
 			

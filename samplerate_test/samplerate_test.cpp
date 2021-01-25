@@ -41,6 +41,7 @@
 
 int main()
 {
+	//read buffer and  convert buffer should enough ; read len and convert len should releated.
 	int sampleIn = 44100;
 	int sampleout = 48000;
 	int nChannel = 2;

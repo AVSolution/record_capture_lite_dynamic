@@ -21,7 +21,7 @@
     <ClCompile Include="..\libsamplerate\src\ReSampleRate.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="resampler.cpp">
+    <ClCompile Include="..\libresample\src\resampler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -29,7 +29,7 @@
     <ClInclude Include="..\libsamplerate\src\ReSampleRate.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resampler.h">
+    <ClInclude Include="..\libresample\src\resampler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

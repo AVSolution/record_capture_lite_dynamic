@@ -25,7 +25,7 @@
 #endif
 
 #ifdef  RESAMPLE
-#include "resampler.h"
+#include "../libresample/src/resampler.h"
 #endif
 
 int main()

@@ -154,10 +154,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\libsamplerate\src\ReSampleRate.cpp" />
+    <ClCompile Include="resampler.cpp" />
     <ClCompile Include="samplerate_test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\libsamplerate\src\ReSampleRate.h" />
+    <ClInclude Include="resampler.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

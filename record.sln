@@ -12,6 +12,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "record_test", "record_test\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "samplerate_test", "samplerate_test\samplerate_test.vcxproj", "{C3D13BE1-A1D4-4CAF-8CBC-A2E00266BCCB}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "aac_test", "aac_test\aac_test.vcxproj", "{FBB10C89-2CDD-4535-885B-A26AF6D641D5}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -44,6 +46,14 @@ Global
 		{C3D13BE1-A1D4-4CAF-8CBC-A2E00266BCCB}.Release|x64.Build.0 = Release|x64
 		{C3D13BE1-A1D4-4CAF-8CBC-A2E00266BCCB}.Release|x86.ActiveCfg = Release|Win32
 		{C3D13BE1-A1D4-4CAF-8CBC-A2E00266BCCB}.Release|x86.Build.0 = Release|Win32
+		{FBB10C89-2CDD-4535-885B-A26AF6D641D5}.Debug|x64.ActiveCfg = Debug|x64
+		{FBB10C89-2CDD-4535-885B-A26AF6D641D5}.Debug|x64.Build.0 = Debug|x64
+		{FBB10C89-2CDD-4535-885B-A26AF6D641D5}.Debug|x86.ActiveCfg = Debug|Win32
+		{FBB10C89-2CDD-4535-885B-A26AF6D641D5}.Debug|x86.Build.0 = Debug|Win32
+		{FBB10C89-2CDD-4535-885B-A26AF6D641D5}.Release|x64.ActiveCfg = Release|x64
+		{FBB10C89-2CDD-4535-885B-A26AF6D641D5}.Release|x64.Build.0 = Release|x64
+		{FBB10C89-2CDD-4535-885B-A26AF6D641D5}.Release|x86.ActiveCfg = Release|Win32
+		{FBB10C89-2CDD-4535-885B-A26AF6D641D5}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

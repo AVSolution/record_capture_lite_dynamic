@@ -110,6 +110,21 @@ namespace RecordCapture {
             return DUPL_RETURN::DUPL_RETURN_ERROR_EXPECTED; // likely a permission issue
         }
         else {
+			//add mouse
+			CURSORINFO cursor = { sizeof(cursor) };
+			GetCursorInfo(&cursor);
+			if (cursor.flags == CURSOR_SHOWING) {
+				RECT rect;
+				GetWindowRect(SelectedWindow, &rect);
+				ICONINFO info = { sizeof(info) };
+				GetIconInfo(cursor.hCursor, &info);
+				const int x = cursor.ptScreenPos.x - rect.left - info.xHotspot;
+				const int y = cursor.ptScreenPos.y - rect.top - info.yHotspot;
+				BITMAP bmpCursor = { 0 };
+				GetObject(info.hbmColor, sizeof(bmpCursor), &bmpCursor);
+				DrawIconEx(CaptureDC.DC, x, y, cursor.hCursor, bmpCursor.bmWidth, bmpCursor.bmHeight,
+					0, NULL, DI_NORMAL);
+			}
 
             BITMAPINFOHEADER bi;
             memset(&bi, 0, sizeof(bi));

@@ -5,39 +5,6 @@
 #include <iostream>
 using namespace std;
 
-class CaptureImpl : public IRecordCapture {
-public:
-	CaptureImpl() { 
-		cout << "CaptureImpl ctor." << endl;
-	}
-
-	~CaptureImpl() { 
-		cout << "CaptureImpl dtor." << endl;
-	}
-
-	virtual void initialization() override {
-		cout<<"CaptureImpl initialization"<<endl;
-	}
-	virtual void startRecord() override {
-		cout << "CaptureImpl startRecord." << endl;
-	}
-	virtual void stopRecord() override {
-		cout<<"CaptureImpl stopRecord."<<endl;
-	}
-};
-
-void* getRecordInstance() {
-	cout << "getRecordInstance." << endl;
-	return static_cast<void*>(new CaptureImpl);
-}
-
-void releaseRecordInstance(void* pInstance) {
-	cout << "releaseRecordInstance." << endl;
-	if (pInstance)
-		delete static_cast<IRecordCapture*>(pInstance);
-	pInstance = nullptr;
-}
-
 namespace RL {
 	namespace RecordCapture {
 

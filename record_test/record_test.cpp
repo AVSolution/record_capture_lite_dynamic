@@ -76,24 +76,6 @@ void ExtractAndConvertToRGBA(const RL::RecordCapture::Image &img, unsigned char 
 	}
 }
 
-class CDerive : public IRecordCaptureCallback {
-public: 
-	CDerive() {
-		cout << "Derive ctor"<< endl;
-	}
-
-	~CDerive() {
-		cout << "Derive dtor" << endl;
-	}
-
-	virtual void onSpeakerAudio() override {
-		cout<<"CDerived onSpeakerAudio."<<endl;
-	}
-	virtual void onWindowFrame() override {
-		cout << "CDerived OnWindowFrame." << endl;
-	}
-};
-
 #define VOLUMEMAX   32767
 int SimpleCalculate_DB(short* pcmData, int sample)
 {
@@ -160,27 +142,6 @@ static void unexpectCrashFunction(_EXCEPTION_POINTERS* excptr)
 
 int main()
 {
-	/*
-	IRecordCapture* pInstance = static_cast<IRecordCapture*>(getRecordInstance());
-	pInstance->initialization();
-	pInstance->startRecord();
-	pInstance->stopRecord();
-
-	releaseRecordInstance(static_cast<void*>(pInstance));
-	pInstance = nullptr;
-	*/
-	
-	/*
-	std::unique_ptr<IRecorCapture> RecordCapture(static_cast<IRecordCapture*>(getRecordInstance()));
-	RecordCapture->initialization();
-	RecordCapture->startRecord();
-	RecordCapture->stopRecord();
-
-    std::cout << "Hello World!\n";
-	*/
-	//record windows .
-
-	//std::this_thread::sleep_for(std::chrono::seconds(10));
 	std::cout << "please input record interval(seconds): ";
 	int nums = getchar() - '0';
 	

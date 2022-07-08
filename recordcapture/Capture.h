@@ -17,28 +17,6 @@
 #define SC_LITE_EXTERN __declspec(dllimport)
 #endif
 
-class SC_LITE_EXTERN IRecordCaptureCallback {
-public:
-	virtual ~IRecordCaptureCallback() { ; }
-
-	virtual void onSpeakerAudio() = 0;
-	virtual void onWindowFrame() = 0;
-};
-
-class IRecordCapture {
-public:
-	virtual ~IRecordCapture() { ; }
-
-	virtual void initialization() = 0;
-	virtual void startRecord() = 0;
-	virtual void stopRecord() = 0;
-};
-
-extern "C" {
-	SC_LITE_EXTERN void* getRecordInstance();
-	SC_LITE_EXTERN void releaseRecordInstance(void* pInstance);
-}
-
 namespace RL {
 	namespace RecordCapture {
 		struct SC_LITE_EXTERN Point {

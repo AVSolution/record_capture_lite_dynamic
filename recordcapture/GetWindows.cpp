@@ -32,7 +32,11 @@ namespace RecordCapture {
         if ((lstyle & WS_CHILDWINDOW))
             return true;
 
-        HWND parentWnd = (HWND)GetWindowLong(hwnd, GWL_HWNDPARENT);
+#ifdef _WIN64
+		HWND parentWnd = (HWND)GetWindowLong(hwnd, GWLP_HWNDPARENT);
+#else
+		HWND parentWnd = (HWND)GetWindowLong(hwnd, GWL_HWNDPARENT);
+#endif
         if (IsWindowEnabled(parentWnd))
             return true;
 

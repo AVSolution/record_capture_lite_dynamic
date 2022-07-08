@@ -7,17 +7,29 @@
 //#include "../MediaStream/include/AudioSampleFormatConvert.h"
 #include "CicleBuffer.h"
 //#include "audioUtil.h"
-#include "../libsamplerate/src/ReSampleRate.h"
+//#include "../libsamplerate/src/ReSampleRate.h"
 #include <DbgHelp.h>
 #pragma comment(lib,"Dbghelp.lib")
+#ifdef _WIN64
+#ifdef _DEBUG
+#pragma comment(lib,"../x64/Debug/RecordCapture.lib")
+#pragma comment(lib,"../MediaStream/x64/Debug/MediaStreamer.lib")
+//#pragma comment(lib,"../libsamplerate/lib/Debug/samplerate.lib")
+#else 
+#pragma  comment(lib,"../x64/Release/RecordCapture.lib")
+#pragma comment(lib,"../MediaStream/x64/Release/MediaStreamer.lib")
+//#pragma comment(lib,"../libsamplerate/lib/Release/samplerate.lib")
+#endif
+#else
 #ifdef _DEBUG
 #pragma comment(lib,"../bind/RecordCapture.lib")
-#pragma comment(lib,"../MediaStream/Debug/MediaStreamer.lib")
+#pragma comment(lib,"../MediaStream/x86/Debug/MediaStreamer.lib")
 //#pragma comment(lib,"../libsamplerate/lib/Debug/samplerate.lib")
 #else 
 #pragma  comment(lib,"../bin/RecordCapture.lib")
-#pragma comment(lib,"../MediaStream/Release/MediaStreamer.lib")
+#pragma comment(lib,"../MediaStream/x86/Release/MediaStreamer.lib")
 //#pragma comment(lib,"../libsamplerate/lib/Release/samplerate.lib")
+#endif
 #endif
 
 #include <algorithm>
@@ -169,6 +181,7 @@ int main()
 	//record windows .
 
 	//std::this_thread::sleep_for(std::chrono::seconds(10));
+	std::cout << "please input record interval(seconds): ";
 	int nums = getchar() - '0';
 	
 	::SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)unexpectCrashFunction);
@@ -176,7 +189,7 @@ int main()
 	using RLOG = RL::RecordCapture::IRecordLog;
 	std::shared_ptr<RL::RecordCapture::IRecordLog> logInstance = RL::RecordCapture::CreateRecordLog([]() {
 		
-		std::string appname = "/yuer/log/record/record.log";
+		std::string appname = "/bixin/log/record/record.log";
 		return RL::RecordCapture::GetLocalAppDataPath() + appname;
 	});
 
@@ -184,7 +197,7 @@ int main()
 
 	auto windows = RL::RecordCapture::GetWindows();
 	decltype(windows) filtereditems;;
-	std::string strchterm = "Óã¶ú";
+	std::string strchterm = "±ÈÐÄ";
 	for (auto &window : windows) {
 		std::string name = window.Name;
 		if (name.find(strchterm) != string::npos) {
@@ -204,7 +217,7 @@ int main()
 		logInstance->rlog(RLOG::LOG_INFO, "Destination width: %d,height:%d",nWidth,nHeight);
 	}
 	else {
-		logInstance->rlog(RLOG::LOG_INFO, "open yuer.exe client please...");
+		logInstance->rlog(RLOG::LOG_INFO, "open bixin.exe client please...");
 		return 0;
 	}
 	
@@ -228,7 +241,7 @@ int main()
 		audioOptions.audioSampleRate = RECORD_AUDIO_RESAMPLE_SAMPLERATE;
 		audioOptions.audioNumChannels = RECORD_AUDIO_RESAMPLE_CHANNEL;
 		audioOptions.isExternalAudioInput = true;
-		std::string mediaLog = RL::RecordCapture::GetLocalAppDataPath() + "/yuer/log/record/";
+		std::string mediaLog = RL::RecordCapture::GetLocalAppDataPath() + "/bixin/log/record/";
 		winMediaStreamer->initialize(publishUrl, videoOptions, audioOptions, WIN_MEDIA_STREAMER_SLK, mediaLog.c_str());
 		winMediaStreamer->start();
 	};
@@ -377,8 +390,8 @@ int main()
 			memcpy(outMicAudioBuffer.get(), audioFrame.buffer, len_s16);
 		else
 		if (audioFrame.channels != RECORD_AUDIO_RESAMPLE_CHANNEL && audioFrame.channels == 1) {
-			RL::RecordCapture::mono_2_stereo((int16_t*)audioFrame.buffer, len_s16 / sizeof(int16_t), (int16_t*)outMicAudioBuffer.get());
-			len_s16 *= 2;
+			//RL::RecordCapture::mono_2_stereo((int16_t*)audioFrame.buffer, len_s16 / sizeof(int16_t), (int16_t*)outMicAudioBuffer.get());
+			//len_s16 *= 2;
 		}
 
 		if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - onMicFrameStart).count() > 10 * 1000) {

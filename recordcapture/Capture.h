@@ -11,14 +11,10 @@
 #include <vector>
 
 #define SC_LITE_DLL
-#if defined(WINDOWS) || defined(WIN32)
 #if defined(SC_LITE_DLL)
 #define SC_LITE_EXTERN __declspec(dllexport)
 #else
-#define SC_LITE_EXTERN
-#endif
-#else
-#define SC_LITE_EXTERN
+#define SC_LITE_EXTERN __declspec(dllimport)
 #endif
 
 class SC_LITE_EXTERN IRecordCaptureCallback {

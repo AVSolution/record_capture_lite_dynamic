@@ -4,9 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 15.0.28307.1145
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "recordcapture", "recordcapture\recordcapture.vcxproj", "{86C98DDA-CDD3-4E2B-9F4F-3B7EE277CFBA}"
-	ProjectSection(ProjectDependencies) = postProject
-		{180E054B-2530-45A0-9463-A0C8E0AD2E4C} = {180E054B-2530-45A0-9463-A0C8E0AD2E4C}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "record_test", "record_test\record_test.vcxproj", "{180E054B-2530-45A0-9463-A0C8E0AD2E4C}"
 EndProject

@@ -24,13 +24,7 @@
     <ClCompile Include="audioUtil.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\libsamplerate\src\ReSampleRate.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="test_main1.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="recordimpl.cpp">
+    <ClCompile Include="record_test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -45,12 +39,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="audioUtil.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libsamplerate\src\ReSampleRate.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="recordimpl.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

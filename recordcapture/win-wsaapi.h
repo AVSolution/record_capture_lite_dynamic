@@ -9,7 +9,11 @@
 #include <Audioclient.h>
 
 #include "../speex_resampler/include/speex/speex_resampler.h"
-#pragma comment(lib,"../speex_resampler/lib/libspeexdsp")
+#ifdef _WIN64
+#pragma comment(lib,"../speex_resampler/lib/x64/libspeexdsp")
+#else
+#pragma comment(lib,"../speex_resampler/lib/x86/libspeexdsp")
+#endif
 
 namespace RL {
 	namespace RecordCapture {

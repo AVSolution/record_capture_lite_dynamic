@@ -169,6 +169,7 @@ namespace RecordCapture {
             timer->wait();
             while (data->CommonData_.Paused) {
                 std::this_thread::sleep_for(50ms);
+				frameprocessor.Pause();
             }
         }
         return true;

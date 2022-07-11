@@ -23,12 +23,26 @@ namespace RecordCapture {
     DUPL_RETURN GDIFrameProcessor::Init(std::shared_ptr<Thread_Data> data, const Window &selectedwindow)
     {
         // this is needed to fix AERO BitBlt capturing issues
+		OSVERSIONINFOEX info;
+		ZeroMemory(&info, sizeof(OSVERSIONINFOEX));
+		info.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+		GetVersionExA((LPOSVERSIONINFO)&info);
+		LogInstance()->rlog(IRecordLog::LOG_INFO, "Windows version: %u.%u\n", info.dwMajorVersion, info.dwMinorVersion);
+		if (info.dwMajorVersion == 6 && info.dwMinorVersion == 1)
+			isWin7 = true;
+
         ANIMATIONINFO str;
         str.cbSize = sizeof(str);
         str.iMinAnimate = 0;
         SystemParametersInfo(SPI_SETANIMATION, sizeof(str), (void *)&str, SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
 
         SelectedWindow = reinterpret_cast<HWND>(selectedwindow.Handle);
+		//win7 add top_most attribute
+		if (isWin7) {
+			RECT rt;
+			GetWindowRect(SelectedWindow, &rt);
+			SetWindowPos(SelectedWindow, HWND_TOPMOST, rt.left, rt.top, rt.right - rt.left, rt.bottom - rt.top, SWP_NOSIZE | SWP_NOMOVE);
+		}
         auto Ret = DUPL_RETURN_SUCCESS;
         NewImageBuffer = std::make_unique<unsigned char[]>(ImageBufferSize);
         MonitorDC.DC = GetWindowDC(SelectedWindow);

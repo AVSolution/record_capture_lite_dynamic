@@ -27,7 +27,7 @@ namespace RecordCapture {
 		ZeroMemory(&info, sizeof(OSVERSIONINFOEX));
 		info.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
 		GetVersionExA((LPOSVERSIONINFO)&info);
-		LogInstance()->rlog(IRecordLog::LOG_INFO, "Windows version: %u.%u\n", info.dwMajorVersion, info.dwMinorVersion);
+		LogInstance()->rlog(IRecordLog::LOG_INFO, "Windows version: %u.%u", info.dwMajorVersion, info.dwMinorVersion);
 		if (info.dwMajorVersion == 6 && info.dwMinorVersion == 1)
 			isWin7 = true;
 
@@ -110,7 +110,9 @@ namespace RecordCapture {
         selectedwindow.Position.y = windowrect.ClientRect.top;
 
         if (!IsWindow(SelectedWindow) || selectedwindow.Size.x != Width(ret) || selectedwindow.Size.y != Height(ret)) {
-            return DUPL_RETURN::DUPL_RETURN_ERROR_EXPECTED; // window size changed. This will rebuild everything
+			LogInstance()->rlog(IRecordLog::LOG_INFO, "windows stretch error: %d", GetLastError());
+            //return DUPL_RETURN::DUPL_RETURN_ERROR_EXPECTED; // window size changed. This will rebuild everything
+			return DUPL_RETURN::DUPL_RETURN_SUCCESS;
         }
 
         // Selecting an object into the specified DC
@@ -118,26 +120,35 @@ namespace RecordCapture {
         auto left = -windowrect.ClientBorder.left;
         auto top = -windowrect.ClientBorder.top;
 
-        if (BitBlt(CaptureDC.DC, left, top, ret.right - ret.left, ret.bottom - ret.top, MonitorDC.DC, 0, 0, SRCCOPY) == FALSE) {
+        if (BitBlt(CaptureDC.DC, left, top, ret.right - ret.left, ret.bottom - ret.top, MonitorDC.DC, 0, 0, SRCCOPY | CAPTUREBLT) == FALSE) {
             // if the screen cannot be captured, return
+			LogInstance()->rlog(IRecordLog::LOG_INFO, "BitBlt error: %d",GetLastError());
             SelectObject(CaptureDC.DC, originalBmp);
-            return DUPL_RETURN::DUPL_RETURN_ERROR_EXPECTED; // likely a permission issue
+            //return DUPL_RETURN::DUPL_RETURN_ERROR_EXPECTED; // likely a permission issue
+			return DUPL_RETURN::DUPL_RETURN_SUCCESS;
         }
         else {
 			//add mouse
-			CURSORINFO cursor = { sizeof(cursor) };
-			GetCursorInfo(&cursor);
-			if (cursor.flags == CURSOR_SHOWING) {
-				RECT rect;
-				GetWindowRect(SelectedWindow, &rect);
-				ICONINFO info = { sizeof(info) };
-				GetIconInfo(cursor.hCursor, &info);
-				const int x = cursor.ptScreenPos.x - rect.left - info.xHotspot;
-				const int y = cursor.ptScreenPos.y - rect.top - info.yHotspot;
-				BITMAP bmpCursor = { 0 };
-				GetObject(info.hbmColor, sizeof(bmpCursor), &bmpCursor);
-				DrawIconEx(CaptureDC.DC, x, y, cursor.hCursor, bmpCursor.bmWidth, bmpCursor.bmHeight,
-					0, NULL, DI_NORMAL);
+			if (true) {
+				HWND wnd = GetForegroundWindow();
+				if (/*cursor.flags == CURSOR_SHOWING && */wnd == SelectedWindow) {
+					RECT rect;		
+					CURSORINFO cursor = { sizeof(cursor) };
+					GetCursorInfo(&cursor);
+					GetWindowRect(SelectedWindow, &rect);
+					ICONINFO info = { sizeof(info) };
+					GetIconInfo(cursor.hCursor, &info);
+					const int x = cursor.ptScreenPos.x - rect.left - info.xHotspot;
+					const int y = cursor.ptScreenPos.y - rect.top - info.yHotspot;
+					BITMAP bmpCursor = { 0 };
+					GetObject(info.hbmColor, sizeof(bmpCursor), &bmpCursor);
+					bool bRes = DrawIconEx(CaptureDC.DC, x, y, cursor.hCursor, bmpCursor.bmWidth, bmpCursor.bmHeight,
+						0, NULL, DI_NORMAL);
+					if (!bRes)
+						LogInstance()->rlog(IRecordLog::LOG_INFO, "DrawIconEx failed: %d", GetLastError());
+					DeleteObject(info.hbmColor);
+					DeleteObject(info.hbmMask);
+				}
 			}
 
             BITMAPINFOHEADER bi;

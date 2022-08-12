@@ -83,7 +83,7 @@ namespace RL {
 							Thread_Data_->CommonData_.ExpectedErrorEvent = Thread_Data_->CommonData_.UnexpectedErrorEvent =
 								Thread_Data_->CommonData_.TerminateThreadsEvent = false;
 							// Clean up
-							std::this_thread::sleep_for(std::chrono::milliseconds(1000)); // sleep for 1 second since an error occcured
+							std::this_thread::sleep_for(std::chrono::milliseconds(10)); // sleep for 1 second since an error occcured
 
 							ThreadMgr.Init(Thread_Data_);
 						}

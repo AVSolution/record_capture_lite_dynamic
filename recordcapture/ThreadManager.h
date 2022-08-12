@@ -158,11 +158,13 @@ namespace RecordCapture {
                     // The system is in a transition state so request the duplication be restarted
                     data->CommonData_.ExpectedErrorEvent = true;
                     std::cout << "Exiting Thread due to expected error " << std::endl;
+					LogInstance()->rlog(IRecordLog::LOG_INFO, "Exiting Thread due to expected error");
                 }
                 else {
                     // Unexpected error so exit the application
                     data->CommonData_.UnexpectedErrorEvent = true;
                     std::cout << "Exiting Thread due to Unexpected error " << std::endl;
+					LogInstance()->rlog(IRecordLog::LOG_INFO, "Exiting Thread due to Unexpected error");
                 }
                 return true;
             }

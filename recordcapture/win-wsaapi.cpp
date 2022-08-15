@@ -196,7 +196,8 @@ namespace RL {
 							audioFrame.channels = wfex->nChannels;
 							audioFrame.samplesPerSec = RECORD_AUDIO_RESAMPLE_SAMPLERATE; //wfex->nSamplesPerSec;
 							audioFrame.renderTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-							if (audioFrame.buffer)
+							if (audioFrame.buffer && 
+								Data && Data->SpeakerCaptureData.onAudioFrame)
 								Data->SpeakerCaptureData.onAudioFrame(audioFrame);
 						}
 					}
@@ -332,7 +333,7 @@ namespace RL {
 							audioFrame.channels = wfex->nChannels;
 							audioFrame.samplesPerSec = RECORD_AUDIO_RESAMPLE_SAMPLERATE; //wfex->nSamplesPerSec;
 							audioFrame.renderTimeMs = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
-							if (audioFrame.buffer)
+							if (audioFrame.buffer && Data &&  Data->MicrophoneCaptureData.onAudioFrame)
 								Data->MicrophoneCaptureData.onAudioFrame(audioFrame);
 						}
 					}

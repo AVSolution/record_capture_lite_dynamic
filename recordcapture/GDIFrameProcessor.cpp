@@ -130,12 +130,18 @@ namespace RecordCapture {
         else {
 			//add mouse
 			if (true) {
+				CURSORINFO cursor = { sizeof(cursor) };
+				GetCursorInfo(&cursor);
 				HWND wnd = GetForegroundWindow();
-				if (/*cursor.flags == CURSOR_SHOWING && */wnd == SelectedWindow) {
-					RECT rect;		
-					CURSORINFO cursor = { sizeof(cursor) };
-					GetCursorInfo(&cursor);
+				if (cursor.flags == CURSOR_SHOWING && wnd == SelectedWindow) {
+					RECT rect;
 					GetWindowRect(SelectedWindow, &rect);
+					if (cursor.ptScreenPos.x  < rect.left ||
+						cursor.ptScreenPos.x > rect.right ||
+						cursor.ptScreenPos.y < rect.top ||
+						cursor.ptScreenPos.y > rect.bottom)
+						return DUPL_RETURN_SUCCESS;
+					//LogInstance()->rlog(IRecordLog::LOG_INFO, "Icon is drawing..");
 					ICONINFO info = { sizeof(info) };
 					GetIconInfo(cursor.hCursor, &info);
 					const int x = cursor.ptScreenPos.x - rect.left - info.xHotspot;

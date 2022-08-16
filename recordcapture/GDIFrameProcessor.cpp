@@ -1,6 +1,8 @@
 #include "GDIFrameProcessor.h"
 #include <Dwmapi.h>
 
+
+
 namespace RL {
 namespace RecordCapture {
 
@@ -42,6 +44,11 @@ namespace RecordCapture {
 			RECT rt;
 			GetWindowRect(SelectedWindow, &rt);
 			SetWindowPos(SelectedWindow, HWND_TOPMOST, rt.left, rt.top, rt.right - rt.left, rt.bottom - rt.top, SWP_NOSIZE | SWP_NOMOVE);
+
+			BOOL enable = false;
+			DwmIsCompositionEnabled(&enable);
+			if(enable)
+				DwmEnableComposition(DWM_EC_DISABLECOMPOSITION);
 		}
         auto Ret = DUPL_RETURN_SUCCESS;
         NewImageBuffer = std::make_unique<unsigned char[]>(ImageBufferSize);

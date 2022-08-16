@@ -29,7 +29,13 @@ namespace RL {
 		}
 
 		void WSAAPISource::Pause() {
+			if (Data->SpeakerCaptureData.onAudioFrame)
+				Data->SpeakerCaptureData.onAudioFrame = nullptr;
+			if (Data->MicrophoneCaptureData.onAudioFrame)
+				Data->MicrophoneCaptureData.onAudioFrame = nullptr;
 
+			Data->CommonData_.TerminateThreadsEvent = true;
+			Data->CommonData_.Paused = false;
 		}
 		void WSAAPISource::Resume() {
 

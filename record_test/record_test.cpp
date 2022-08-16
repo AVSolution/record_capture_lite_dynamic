@@ -10,6 +10,9 @@
 //#include "../libsamplerate/src/ReSampleRate.h"
 #include <DbgHelp.h>
 #pragma comment(lib,"Dbghelp.lib")
+#include <dwmapi.h>
+#pragma comment(lib,"Dwmapi.lib")
+
 #ifdef _WIN64
 #ifdef _DEBUG
 #pragma comment(lib,"../x64/Debug/RecordCapture.lib")
@@ -41,6 +44,7 @@
 #include <string>
 #include <thread>
 #include <vector>
+#include <memory>
 
 // THESE LIBRARIES ARE HERE FOR CONVINIENCE!! They are SLOW and ONLY USED FOR
 // HOW THE LIBRARY WORKS!
@@ -142,7 +146,18 @@ static void unexpectCrashFunction(_EXCEPTION_POINTERS* excptr)
 
 int main()
 {
+	//BOOL enable = false;
+	//DwmIsCompositionEnabled(&enable);
+	//std::cout << enable <<std::endl;
+	//if (enable)
+	//	DwmEnableComposition(DWM_EC_DISABLECOMPOSITION);
+	//else
+	//	DwmEnableComposition(DWM_EC_ENABLECOMPOSITION);
+	//DwmIsCompositionEnabled(&enable);
+	//std::cout << enable << std::endl;
+
 	std::cout << "please input record interval(seconds): ";
+
 	int nums = getchar() - '0';
 	
 	::SetUnhandledExceptionFilter((LPTOP_LEVEL_EXCEPTION_FILTER)unexpectCrashFunction);
@@ -189,7 +204,7 @@ int main()
 
 	IWinMediaStreamer* winMediaStreamer = CreateWinMediaStreamerInstance();
 	auto mux_initialization = [=]() {
-		const char* publishUrl = "C:\\tmp\\cris.mp4";
+		const char* publishUrl = "C:\\tmp\\cris.flv";
 		WinVideoOptions videoOptions;
 		videoOptions.videoWidth =  nWidth;
 		videoOptions.videoHeight =  nHeight;

@@ -24,6 +24,7 @@ namespace RL {
 					RECT rt;
 					GetWindowRect(SelectedWindow, &rt);
 					int res = SetWindowPos(SelectedWindow, HWND_NOTOPMOST, rt.left, rt.top, rt.right - rt.left, rt.bottom - rt.top, SWP_NOSIZE | SWP_NOMOVE);
+					LogInstance()->rlog(IRecordLog::LOG_INFO, "pause capture. win7 restore window attribute notopmost\n");
 				}
 			}
             void Resume() {}
